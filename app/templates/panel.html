@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Videovigilancia</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 10px;
+            background-color: #2c3e50;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .camera-container {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .camera-container:hover {
+            transform: translateY(-5px);
+        }
+        
+        .camera-header {
+            padding: 10px;
+            background-color: #34495e;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .camera-feed {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .camera-info {
+            padding: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        .camera-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .online {
+            background-color: #2ecc71;
+        }
+        
+        .offline {
+            background-color: #e74c3c;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .setup-form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .form-row {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .fullscreen img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        
+        .close-fullscreen {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Sistema de Videovigilancia</h1>
+        <p id="current-time">Cargando...</p>
+    </div>
+    
+    <div class="controls">
+        <button id="add-camera">Añadir Cámara</button>
+        <button id="toggle-setup">Configuración</button>
+        <button id="fullscreen-all">Ver Todo</button>
+    </div>
+    
+    <div id="cameras-dashboard" class="dashboard">
+        <!-- Las cámaras se cargarán dinámicamente aquí -->
+    </div>
+    
+    <div id="setup-panel" class="setup-form" style="display: none;">
+        <h2>Configuración de Cámaras</h2>
+        <div class="form-row">
+            <label for="camera-name">Nombre de la Cámara:</label>
+            <input type="text" id="camera-name" placeholder="Ej: Entrada Principal">
+        </div>
+        <div class="form-row">
+            <label for="camera-ip">Dirección IP de la Cámara:</label>
+            <input type="text" id="camera-ip" placeholder="Ej: 192.168.1.100">
+        </div>
+        <div class="form-row">
+            <button id="save-camera">Guardar Cámara</button>
+        </div>
+        
+        <h3>Cámaras Configuradas</h3>
+        <div id="camera-list">
+            <!-- Lista de cámaras configuradas -->
+        </div>
+    </div>
+    
+    <div id="fullscreen-view" class="fullscreen">
+        <span class="close-fullscreen">&times;</span>
+        <img id="fullscreen-image" src="">
+    </div>
+    
+    <script>
+        // Almacenamiento de cámaras
+        let cameras = JSON.parse(localStorage.getItem('security-cameras')) || [];
+        
+        // Elementos DOM
+        const dashboardEl = document.getElementById('cameras-dashboard');
+        const setupPanelEl = document.getElementById('setup-panel');
+        const cameraListEl = document.getElementById('camera-list');
+        const fullscreenViewEl = document.getElementById('fullscreen-view');
+        const fullscreenImageEl = document.getElementById('fullscreen-image');
+        
+        // Actualizar reloj
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+        
+        // Renderizar las cámaras en el dashboard
+        function renderCameras() {
+            dashboardEl.innerHTML = '';
+            
+            if (cameras.length === 0) {
+                dashboardEl.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px;"><h2>No hay cámaras configuradas</h2><p>Haz clic en "Añadir Cámara" para comenzar.</p></div>';
+                return;
+            }
+            
+            cameras.forEach((camera, index) => {
+                const cameraEl = document.createElement('div');
+                cameraEl.className = 'camera-container';
+                cameraEl.innerHTML = `
+                    <div class="camera-header">
+                        <h3>${camera.name}</h3>
+                        <span class="camera-status ${camera.online ? 'online' : 'offline'}"></span>
+                    </div>
+                    <img class="camera-feed" src="http://${camera.ip}/stream" onerror="this.onerror=null; this.src='https://via.placeholder.com/640x480?text=Cámara+Desconectada'; this.parentNode.querySelector('.camera-status').className='camera-status offline';" onload="this.parentNode.querySelector('.camera-status').className='camera-status online';">
+                    <div class="camera-info">
+                        <p>IP: ${camera.ip}</p>
+                        <button class="fullscreen-btn" data-index="${index}">Pantalla Completa</button>
+                        <button class="remove-btn" data-index="${index}">Eliminar</button>
+                    </div>
+                `;
+                dashboardEl.appendChild(cameraEl);
+            });
+            
+            // Añadir event listeners para los botones de pantalla completa
+            document.querySelectorAll('.fullscreen-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = e.target.getAttribute('data-index');
+                    const camera = cameras[index];
+                    fullscreenImageEl.src = `http://${camera.ip}/stream`;
+                    fullscreenViewEl.style.display = 'flex';
+                });
+            });
+            
+            // Añadir event listeners para los botones de eliminar
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = e.target.getAttribute('data-index');
+                    if (confirm('¿Estás seguro de que deseas eliminar esta cámara?')) {
+                        cameras.splice(index, 1);
+                        localStorage.setItem('security-cameras', JSON.stringify(cameras));
+                        renderCameras();
+                        renderCameraList();
+                    }
+                });
+            });
+        }
+        
+        // Renderizar la lista de cámaras en el panel de configuración
+        function renderCameraList() {
+            cameraListEl.innerHTML = '';
+            
+            if (cameras.length === 0) {
+                cameraListEl.innerHTML = '<p>No hay cámaras configuradas.</p>';
+                return;
+            }
+            
+            cameras.forEach((camera, index) => {
+                const cameraItemEl = document.createElement('div');
+                cameraItemEl.innerHTML = `
+                    <p><strong>${camera.name}</strong> - ${camera.ip}
+                    <button class="remove-btn-small" data-index="${index}">Eliminar</button></p>
+                `;
+                cameraListEl.appendChild(cameraItemEl);
+            });
+            
+            document.querySelectorAll('.remove-btn-small').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = e.target.getAttribute('data-index');
+                    if (confirm('¿Estás seguro de que deseas eliminar esta cámara?')) {
+                        cameras.splice(index, 1);
+                        localStorage.setItem('security-cameras', JSON.stringify(cameras));
+                        renderCameras();
+                        renderCameraList();
+                    }
+                });
+            });
+        }
+        
+        // Event Listeners
+        document.getElementById('toggle-setup').addEventListener('click', () => {
+            setupPanelEl.style.display = setupPanelEl.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        document.getElementById('add-camera').addEventListener('click', () => {
+            setupPanelEl.style.display = 'block';
+            document.getElementById('camera-name').focus();
+        });
+        
+        document.getElementById('save-camera').addEventListener('click', () => {
+            const name = document.getElementById('camera-name').value.trim();
+            const ip = document.getElementById('camera-ip').value.trim();
+            
+            if (!name || !ip) {
+                alert('Por favor, completa todos los campos');
+                return;
+            }
+            
+            cameras.push({
+                name,
+                ip,
+                online: false
+            });
+            
+            localStorage.setItem('security-cameras', JSON.stringify(cameras));
+            
+            // Limpiar formulario
+            document.getElementById('camera-name').value = '';
+            document.getElementById('camera-ip').value = '';
+            
+            renderCameras();
+            renderCameraList();
+        });
+        
+        document.getElementById('fullscreen-all').addEventListener('click', () => {
+            if (cameras.length === 0) {
+                alert('No hay cámaras configuradas');
+                return;
+            }
+            
+            // Abrir una nueva ventana con todas las cámaras
+            const newWindow = window.open('', '_blank', 'width=1200,height=800');
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Todas las Cámaras</title>
+                    <style>
+                        body { margin: 0; padding: 20px; background: #000; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 10px; }
+                        .camera { position: relative; }
+                        .camera-name { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 3px; }
+                        img { width: 100%; height: auto; }
+                    </style>
+                </head>
+                <body>
+                    ${cameras.map(camera => `
+                        <div class="camera">
+                            <div class="camera-name">${camera.name}</div>
+                            <img src="http://${camera.ip}/stream" onerror="this.src='https://via.placeholder.com/640x480?text=Cámara+Desconectada'">
+                        </div>
+                    `).join('')}
+                </body>
+                </html>
+            `);
+        });
+        
+        // Cerrar vista de pantalla completa
+        document.querySelector('.close-fullscreen').addEventListener('click', () => {
+            fullscreenViewEl.style.display = 'none';
+        });
+        
+        // Inicialización
+        renderCameras();
+        renderCameraList();
+    </script>
+</body>
+</html>

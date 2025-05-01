@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DGARD - Reportes</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reportes.css') }}">
+    <!-- Incluimos Chart.js para las gráficas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body class="font-sans bg-gray-100">
+    <!-- Navbar modificado con notificaciones mejoradas -->
+    <nav class="bg-gray-900 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <span class="text-2xl font-bold mr-10">DGARD</span>
+            </div>
+            <div class="flex items-center space-x-6">
+                <!-- Botón de notificaciones mejorado -->
+                <div class="relative">
+                    <button id="notifications-btn" class="text-white hover:text-blue-400 transition p-2">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs transition-all">
+                            {{ data.stats.alerts_count if data is defined and data.stats is defined and data.stats.alerts_count > 0 else '' }}
+                        </span>
+                    </button>
+                    <!-- El dropdown de notificaciones se creará dinámicamente con JavaScript -->
+                </div>
+                
+                <!-- Dropdown de usuario mejorado -->
+                <div class="relative">
+                    <button id="user-menu-btn" class="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 transition">
+                        <span class="hidden md:inline">{{ data.user_info.nombre_usuario if data is defined and data.user_info is defined else 'Usuario' }}</span>
+                        <i class="fas fa-chevron-down text-sm"></i>
+                    </button>
+                    <!-- Dropdown menu con estilos mejorados -->
+                    <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-10">
+                        <a href="{{ url_for('perfil') }}" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Volver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-6">
+        <!-- User Info Section -->
+        <div class="bg-white shadow-lg rounded-lg mb-6">
+            <div class="p-4 flex items-center">
+                <div class="p-3 rounded-full bg-blue-500 text-white">
+                    <i class="fas fa-chart-line text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h2 class="text-xl font-bold">Centro de Reportes</h2>
+                    <p class="text-gray-500">Monitoreo y análisis de actividad</p>
+                </div>
+                <div class="ml-auto">
+                    <button id="generate-report-btn" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition">
+                        <i class="fas fa-file-export mr-2"></i>Generar Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros de fecha -->
+        <div class="bg-white shadow-lg rounded-lg mb-6 p-4">
+            <h3 class="text-lg font-semibold mb-3">Filtros</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="col-span-1">
+                    <label for="date-range" class="block text-sm font-medium text-gray-700 mb-1">Rango de fechas</label>
+                    <select id="date-range" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="day">Último día</option>
+                        <option value="week" selected>Última semana</option>
+                        <option value="month">Último mes</option>
+                    </select>
+                </div>
+                <div class="col-span-1">
+                    <label for="camera-filter" class="block text-sm font-medium text-gray-700 mb-1">Cámara</label>
+                    <select id="camera-filter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all" selected>Todas las cámaras</option>
+                        {% if data is defined and data.cameras is defined %}
+                            {% for camera in data.cameras %}
+                                <option value="{{ camera.id_camara }}">{{ camera.nombre_posicion }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div id="custom-date-container" class="col-span-2 hidden md:grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">Fecha inicial</label>
+                        <input type="date" id="start-date" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">Fecha final</label>
+                        <input type="date" id="end-date" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button id="apply-filters" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-filter mr-2"></i>Aplicar Filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- Resumen estadístico -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white shadow-lg rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                        <i class="fas fa-exclamation-triangle text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-gray-500 text-sm">Total Alertas</h3>
+                        <p class="text-2xl font-semibold" id="total-alerts">{{ data.stats.total_alerts if data is defined and data.stats is defined else '0' }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white shadow-lg rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                        <i class="fas fa-bell text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-gray-500 text-sm">Alertas Recientes (24h)</h3>
+                        <p class="text-2xl font-semibold" id="recent-alerts">{{ data.stats.recent_alerts if data is defined and data.stats is defined else '0' }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white shadow-lg rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-gray-500 text-sm">Alertas Revisadas</h3>
+                        <p class="text-2xl font-semibold" id="reviewed-alerts">{{ data.stats.reviewed_alerts if data is defined and data.stats is defined else '0' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Gráfica de barras - Alertas por día -->
+            <div class="bg-white shadow-lg rounded-lg p-4">
+                <h3 class="text-lg font-semibold mb-3">Alertas por Día</h3>
+                <div class="chart-container" style="position: relative; height:250px;">
+                    <canvas id="alertsByDayChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfica circular - Distribución por cámara -->
+            <div class="bg-white shadow-lg rounded-lg p-4">
+                <h3 class="text-lg font-semibold mb-3">Distribución por Cámara</h3>
+                <div class="chart-container" style="position: relative; height:250px;">
+                    <canvas id="cameraDistribution"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfica de línea de tiempo - Tendencia mensual -->
+        <div class="bg-white shadow-lg rounded-lg p-4 mb-6">
+            <h3 class="text-lg font-semibold mb-3">Tendencia de Alertas</h3>
+            <div class="chart-container" style="position: relative; height:300px;">
+                <canvas id="alertsTrend"></canvas>
+            </div>
+        </div>
+
+        <!-- Tabla de últimas alertas -->
+        <div class="bg-white shadow-lg rounded-lg p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Últimas Alertas</h3>
+                <a href="#" class="text-blue-500 hover:text-blue-700 text-sm font-medium">
+                    Ver todas <i class="fas fa-angle-right ml-1"></i>
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cámara</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="alerts-table-body">
+                        <!-- Esta sección se llenará dinámicamente con JavaScript -->
+                        {% if data is defined and data.recent_alerts is defined and data.recent_alerts|length > 0 %}
+                            {% for alert in data.recent_alerts %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ alert.nombre_posicion }}</td>
+                                <td class="px-6 py-4">{{ alert.descripcion }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ alert.fecha_evento }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ alert.hora_evento }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ 'bg-green-100 text-green-800' if alert.revisado else 'bg-red-100 text-red-800' }}">
+                                        {{ 'Revisada' if alert.revisado else 'Pendiente' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay alertas disponibles</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificaciones dropdown container (creado dinámicamente) -->
+    <div id="notifications-dropdown" class="hidden fixed z-20 mt-2 w-80 bg-white rounded-md shadow-lg py-1 right-4 top-16"></div>
+
+    <!-- Modal para Generación de Reportes -->
+    <div id="report-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-gray-900 opacity-50"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+                <!-- Header del modal -->
+                <div class="bg-gray-900 text-white px-4 py-3 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold">Generar Reporte</h3>
+                    <button id="close-report-modal" class="text-white hover:text-gray-300 focus:outline-none">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Contenido del modal -->
+                <div class="p-4">
+                    <form id="report-form">
+                        <div class="mb-4">
+                            <label for="report-title" class="block text-gray-700 font-medium mb-2">Título del Reporte</label>
+                            <input type="text" id="report-title" name="report-title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ingrese un título para el reporte" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="report-type" class="block text-gray-700 font-medium mb-2">Tipo de Reporte</label>
+                            <select id="report-type" name="report-type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <option value="alerts-summary">Resumen de Alertas</option>
+                                <option value="camera-activity">Actividad por Cámara</option>
+                                <option value="complete">Reporte Completo</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="report-format" class="block text-gray-700 font-medium mb-2">Formato</label>
+                            <select id="report-format" name="report-format" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <option value="pdf">PDF</option>
+                                <option value="excel">Excel</option>
+                                <option value="csv">CSV</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2">Incluir</label>
+                            <div class="flex flex-col gap-2">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="include-graphs" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" checked>
+                                    <span class="ml-2">Gráficas</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="include-alerts" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" checked>
+                                    <span class="ml-2">Lista de alertas</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="include-summary" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" checked>
+                                    <span class="ml-2">Resumen estadístico</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="mt-6 flex justify-end">
+                            <button type="button" id="cancel-report" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 mr-2">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                Generar Reporte
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de mensajes flash -->
+    <div id="flash-messages" class="fixed top-4 right-4 z-50">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="bg-{{ 'green' if category == 'success' else 'red' }}-100 border-l-4 border-{{ 'green' if category == 'success' else 'red' }}-500 text-{{ 'green' if category == 'success' else 'red' }}-700 p-4 mb-2 rounded shadow-md" role="alert">
+                    <p>{{ message }}</p>
+                    <button type="button" class="float-right" onclick="this.parentElement.style.display='none';">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/reportes.js') }}"></script>
+</body>
+</html>

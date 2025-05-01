@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DGARD - Visualización de Cámaras</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/camaras.css') }}" rel="stylesheet">
+</head>
+<body class="font-sans bg-black text-white">
+    <div class="main-container">
+        <!-- Navbar -->
+        <nav class="navbar bg-gray-900 text-white p-3">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold">DGARD</span>
+                    <span class="ml-4 text-sm bg-blue-600 px-2 py-1 rounded-md">Sistema de Vigilancia</span>
+                </div>
+                <div class="flex items-center">
+                    <div id="current-time" class="mr-4 text-sm"></div>
+                    <a href="{{ url_for('perfil') }}" class="bg-gray-800 hover:bg-gray-700 text-white py-1 px-3 rounded-md transition text-sm">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Cameras Wrapper -->
+        <div class="cameras-wrapper">
+            <!-- Cameras Grid -->
+            <div id="cameras-grid" class="cameras-grid">
+                {% if data is defined and data.cameras is defined and data.cameras|length > 0 %}
+                    {% for camera in data.cameras %}
+                    <div class="camera-container" data-camera-id="{{ camera.id_camara }}">
+                        <div class="camera-feed">
+                            <!-- Imagen principal de la cámara -->
+                            <img class="camera-stream w-full h-full object-cover" 
+                                 src="http://{{ camera.ip_camara }}/stream" 
+                                 alt="{{ camera.nombre_posicion }}"
+                                 data-camera-ip="{{ camera.ip_camara }}"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block'; handleCameraOffline(this);"
+                                 onload="handleCameraOnline(this);">
+                                 
+                            <!-- Imagen para estado 'offline' -->
+                            <img class="cam-offline hidden" 
+                            src="/static/img/camera-off-512.png"
+                                 alt="Cámara desconectada">
+                                 
+                            <!-- Indicador para estado 'verificando' -->
+                            <div class="cam-checking flex items-center justify-center h-full">
+                                <i class="fas fa-spinner fa-spin text-gray-400 text-4xl"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="camera-status-indicator">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Verificando...</span>
+                        </div>
+                        
+                        <div class="camera-actions">
+                            <button class="action-btn refresh-btn" data-camera-ip="{{ camera.ip_camara }}">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="camera-overlay">
+                            <div>
+                                <span class="camera-location font-medium">{{ camera.nombre_posicion }}</span>
+                            </div>
+                            <div class="camera-time text-xs"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-span-full flex items-center justify-center h-full">
+                        <div class="text-center p-8">
+                            <i class="fas fa-video-slash text-5xl mb-4 text-gray-500"></i>
+                            <h2 class="text-xl font-semibold text-gray-400 mb-2">No hay cámaras disponibles</h2>
+                            <p class="text-gray-500 mb-4">No tienes cámaras registradas en el sistema</p>
+                            <a href="{{ url_for('perfil') }}" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition text-sm">
+                                Ir al perfil para añadir cámaras
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de mensajes flash -->
+    <div id="flash-messages" class="fixed top-4 right-4 z-50">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="bg-{{ 'green' if category == 'success' else 'red' }}-100 border-l-4 border-{{ 'green' if category == 'success' else 'red' }}-500 text-{{ 'green' if category == 'success' else 'red' }}-700 p-4 mb-2 rounded shadow-md" role="alert">
+                    <p>{{ message }}</p>
+                    <button type="button" class="float-right" onclick="this.parentElement.style.display='none';">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Vista de cámara en pantalla completa -->
+    <div id="fullscreen-view" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden">
+        <div class="relative w-full h-full max-w-6xl max-h-full p-4 flex flex-col">
+            <div class="flex justify-between items-center text-white mb-2">
+                <h3 id="fullscreen-title" class="text-xl font-semibold">Cámara</h3>
+                <button id="close-fullscreen" class="text-white hover:text-gray-300 text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex-grow flex items-center justify-center">
+                <img id="fullscreen-image" class="max-w-full max-h-full object-contain" src="">
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/camaras.js') }}"></script>
+</body>
+</html>

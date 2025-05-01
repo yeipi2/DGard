@@ -1,0 +1,482 @@
+/* Animaciones y transiciones */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Estilos generales mejorados */
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+/* Notificaciones y alertas - Corrección */
+#notifications-dropdown {
+    width: 320px;  /* Ancho base */
+    max-width: 100vw; /* Evita que se salga en móviles */
+    right: 0;
+    top: 100%;     /* Se posiciona debajo del botón */
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 50;   /* Asegura que esté por encima de otros elementos */
+    border: 1px solid #e5e7eb; /* Borde ligero para mejor definición */
+}
+
+/* Mejora para el scrollbar */
+#notifications-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+#notifications-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#notifications-dropdown::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+#notifications-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Media query para pantallas más grandes */
+@media (min-width: 768px) {
+    #notifications-dropdown {
+        width: 384px; /* 96rem en Tailwind */
+    }
+}
+
+/* Animación de entrada para el dropdown */
+#notifications-dropdown:not(.hidden) {
+    animation: slideDown 0.3s ease forwards;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos para los elementos dentro del dropdown */
+.notification-item {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f9fafb;
+}
+
+.alertas-container > div {
+    animation: slideIn 0.3s;
+}
+
+.new-alert {
+    animation: fadeIn 0.5s;
+}
+
+/* Mejorar el dropdown */
+#user-dropdown {
+    transform-origin: top right;
+    transition: transform 0.2s, opacity 0.2s;
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+#user-dropdown:not(.hidden) {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Mejoras para cámaras */
+.camera-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.camera-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Mejorar las interacciones de los botones */
+button, a {
+    transition: all 0.2s ease;
+}
+
+/* Mensajes Flash con estilos de nuevas alertas */
+#flash-messages {
+    max-width: 400px;
+}
+
+.flash-message {
+    position: relative;
+    animation: slideIn 0.5s ease-out;
+    transition: opacity 0.6s ease;
+    max-width: 100%;
+    word-wrap: break-word;
+    margin-bottom: 15px !important;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.close-flash {
+    z-index: 10;
+}
+
+/* Estilos de las alertas */
+.new-message-box {
+    margin: 10px 0;
+    padding-left: 20px;
+    position: relative;
+}
+
+.new-message-box p {
+    font-size: 1.05em;
+    font-weight: 500;
+    line-height: 1.2;
+    padding-right: 20px;
+}
+
+/* Pestaña de info */
+.info-tab {
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+    position: relative;
+    top: 8px;
+}
+
+.info-tab {
+    float: left;
+    margin-left: -23px;
+}
+
+.info-tab i::before {
+    width: 24px;
+    height: 24px;
+    box-shadow: inset 12px 0 13px rgba(0,0,0,0.5);
+}
+
+.info-tab i::after {
+    width: 0;
+    height: 0;
+    border: 12px solid transparent;
+    border-bottom-color: #fff;
+    border-left-color: #fff;
+    bottom: -18px;
+}
+
+.info-tab i::before, .info-tab i::after {
+    content: "";
+    display: inline-block;
+    position: absolute;
+    left: 0;
+    bottom: -17px;
+    transform: rotateX(60deg);
+}
+
+.tip-box-success, .tip-box-danger, .tip-box-warning, .tip-box-info, .tip-box-alert {
+    padding: 12px 8px 3px 26px;
+}
+
+/***Success****/
+.new-message-box-success {
+    background: #eeeeee;
+    padding: 3px;
+}
+
+.tip-icon-success {
+    background: #8BC34A;
+}
+
+.tip-box-success {
+    color: #33691E;
+    background: #DCEDC8;
+}
+
+.tip-icon-success::before {
+    font-size: 25px;
+    content: "\f00c";
+    top: 8px;
+    left: 11px;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    color: white;
+}
+
+.tip-icon-success i::before {
+    background: #8BC34A;
+}
+
+/*******Danger*******/
+.new-message-box-danger {
+    background: #eeeeee;
+    padding: 3px;
+}
+
+.tip-icon-danger {
+    background: #f44336;
+}
+
+.tip-box-danger {
+    color: #b71c1c;
+    background: #FFCCBC;
+}
+
+.tip-icon-danger::before {
+    font-size: 25px;
+    content: "\f00d";
+    top: 8px;
+    left: 11px;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    color: white;
+}
+
+.tip-icon-danger i::before {
+    background: #f44336;
+}
+
+/*******Info*******/
+.new-message-box-info {
+    background: #eeeeee;
+    padding: 3px;
+}
+
+.tip-box-info {
+    color: #01579B;
+    background: #B3E5FC;
+}
+
+.tip-icon-info {
+    background: #03A9F4;
+}
+
+.tip-icon-info::before {
+    font-size: 25px;
+    content: "\f129";
+    top: 8px;
+    left: 14px;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    color: white;
+}
+
+.tip-icon-info i::before {
+    background: #03A9F4;
+}
+
+/*******warning*******/
+.new-message-box-warning {
+    background: #eeeeee;
+    padding: 3px;
+}
+
+.tip-icon-warning {
+    background: #FFEB3B;
+}
+
+.tip-box-warning {
+    color: #212121;
+    background: #FFF9C4;
+}
+
+.tip-icon-warning::before {
+    font-size: 25px;
+    content: "\f071";
+    top: 8px;
+    left: 11px;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    color: #212121;
+}
+
+.tip-icon-warning i::before {
+    background: #FFEB3B;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Efecto hover mejorado para botones de navegación */
+.nav-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para la sección de estadísticas */
+.stats-card {
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Animación para elementos que se descartan */
+.fade-out {
+    opacity: 0;
+    transform: translateX(30px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+/* Estilos para la pantalla de carga */
+.loading-spinner {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, .3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+
+/* Animaciones para el modal de configuración */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes modalSlideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes modalSlideOut {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(-50px); opacity: 0; }
+}
+
+@keyframes tabContentFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tabButtonSelection {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Estilos para el modal */
+#configModal {
+    transition: visibility 0.3s, opacity 0.3s;
+}
+
+#configModal .bg-white {
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+#configModal:not(.hidden) {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+#configModal:not(.hidden) .bg-white {
+    animation: modalSlideIn 0.3s ease forwards;
+}
+
+/* Transiciones para los tabs */
+.tab-content {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+}
+
+.tab-content.hidden {
+    display: none;
+    opacity: 0;
+}
+
+.tab-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.text-blue-600::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+    background-size: 200% 200%;
+    animation: tabButtonSelection 2s ease infinite;
+}
+
+/* Estilos para campos deshabilitados */
+input.bg-gray-200 {
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+/* Efecto de enfoque para los campos */
+input:focus:not([readonly]) {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    transition: box-shadow 0.3s ease;
+}
+
+/* Transición para el botón de guardar */
+button[type="submit"] {
+    transition: background-color 0.3s, opacity 0.3s, transform 0.3s;
+}
+
+button[type="submit"]:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+button[type="submit"]:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

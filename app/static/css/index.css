@@ -1,0 +1,558 @@
+/* Estilos generales */
+body, html {
+    margin: 0;
+    padding: 0;
+    scroll-behavior: smooth;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+/* Estilos para el indicador de carga */
+#carousel-loader {
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#carousel-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+/* Hero section */
+.hero-section {
+    position: relative;
+    overflow: hidden;
+    background-position: center;
+    background-size: cover;
+    transition: background-image 1s ease;
+    min-height: 500px;
+    padding: 80px 0;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1;
+}
+
+.hero-section .container {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-section a.bg-blue-600 {
+    margin-top: 2rem;
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+}
+
+/* Tarjetas de características */
+.feature-card {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    height: 100%;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Animaciones para botones e iconos */
+.btn-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+/* Estilos para modales */
+.modal-content {
+    animation: modalFadeIn 0.3s ease-out;
+    max-width: 90%;
+}
+
+#login-modal, #register-modal {
+    z-index: 50;
+}
+
+#login-modal .bg-white, #register-modal .bg-white {
+    max-height: 90vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+    border-radius: 8px;
+}
+
+/* Específicamente para el modal de registro */
+#register-modal .bg-white {
+    padding-right: 16px;
+    overflow-y: scroll;
+    max-height: 80vh;
+}
+
+/* Estilos de scrollbar para navegadores webkit */
+#login-modal .bg-white::-webkit-scrollbar, 
+#register-modal .bg-white::-webkit-scrollbar {
+    width: 8px;
+}
+
+#login-modal .bg-white::-webkit-scrollbar-track, 
+#register-modal .bg-white::-webkit-scrollbar-track {
+    background: #f7fafc;
+}
+
+#login-modal .bg-white::-webkit-scrollbar-thumb, 
+#register-modal .bg-white::-webkit-scrollbar-thumb {
+    background-color: #cbd5e0;
+    border-radius: 4px;
+}
+
+/* Estilo para el modal cuando está abierto */
+.modal-open .bg-white {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos para iconos de redes sociales */
+.social-icon {
+    transition: transform 0.3s ease;
+}
+
+.social-icon:hover {
+    transform: scale(1.2);
+}
+
+/* Mensajes Flash con estilos de nuevas alertas */
+#flash-messages {
+    max-width: 400px;
+}
+
+.flash-message {
+    position: relative;
+    animation: slideIn 0.5s ease-out;
+    transition: opacity 0.6s ease;
+    max-width: 100%;
+    word-wrap: break-word;
+    margin-bottom: 15px !important;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.close-flash {
+    z-index: 10;
+}
+
+/* Estilos de las alertas */
+.new-message-box {
+    margin: 10px 0;
+    padding-left: 20px;
+    position: relative;
+}
+
+.new-message-box p {
+    font-size: 1.05em;
+    font-weight: 500;
+    line-height: 1.2;
+    padding-right: 20px;
+}
+
+/* Pestaña de info */
+.info-tab {
+    width: 40px;
+    height: 40px;
+    display: inline-block;
+    position: relative;
+    top: 8px;
+}
+
+.info-tab {
+    float: left;
+    margin-left: -23px;
+}
+
+.info-tab i::before {
+    width: 24px;
+    height: 24px;
+    box-shadow: inset 12px 0 13px rgba(0,0,0,0.5);
+}
+
+.info-tab i::after {
+    width: 0;
+    height: 0;
+    border: 12px solid transparent;
+    border-bottom-color: #fff;
+    border-left-color: #fff;
+    bottom: -18px;
+}
+
+.info-tab i::before, .info-tab i::after {
+    content: "";
+    display: inline-block;
+    position: absolute;
+    left: 0;
+    bottom: -17px;
+    transform: rotateX(60deg);
+}
+
+.tip-box-success, .tip-box-danger, .tip-box-warning, .tip-box-info, .tip-box-alert {
+    padding: 12px 8px 3px 26px;
+}
+
+/***Success****/
+.new-message-box-success {
+    background: #eeeeee;
+    padding: 3px;
+}
+
+.tip-icon-success {
+    background: #8BC34A;
+}
+
+.tip-box-success {
+    color: #33691E;
+    background: #DCEDC8;
+}
+
+.tip-icon-success::before {
+    font-size: 25px;
+    content: "\f00c";
+    top: 8px;
+    left: 11px;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    color: white;
+}
+
+.tip-icon-success i::before {
+    background: #8BC34A;
+}
+
+/*******Danger*******/
+.new-message-box-danger {
+    background: #eeeeee;
+    padding: 3px;
+}
+
+.tip-icon-danger {
+    background: #f44336;
+}
+
+.tip-box-danger {
+    color: #b71c1c;
+    background: #FFCCBC;
+}
+
+.tip-icon-danger::before {
+    font-size: 25px;
+    content: "\f00d";
+    top: 8px;
+    left: 11px;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    color: white;
+}
+
+.tip-icon-danger i::before {
+    background: #f44336;
+}
+
+/*******Info*******/
+.new-message-box-info {
+    background: #eeeeee;
+    padding: 3px;
+}
+
+.tip-box-info {
+    color: #01579B;
+    background: #B3E5FC;
+}
+
+.tip-icon-info {
+    background: #03A9F4;
+}
+
+.tip-icon-info::before {
+    font-size: 25px;
+    content: "\f129";
+    top: 8px;
+    left: 14px;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    color: white;
+}
+
+.tip-icon-info i::before {
+    background: #03A9F4;
+}
+
+/*******warning*******/
+.new-message-box-warning {
+    background: #eeeeee;
+    padding: 3px;
+}
+
+.tip-icon-warning {
+    background: #FFEB3B;
+}
+
+.tip-box-warning {
+    color: #212121;
+    background: #FFF9C4;
+}
+
+.tip-icon-warning::before {
+    font-size: 25px;
+    content: "\f071";
+    top: 8px;
+    left: 11px;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    color: #212121;
+}
+
+.tip-icon-warning i::before {
+    background: #FFEB3B;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Estilos de formularios */
+input:focus, textarea:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6;
+}
+
+/* Estilos para validación de formularios */
+input.border-red-500 {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 1px #ef4444;
+}
+
+input.border-green-500 {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 1px #10b981;
+}
+
+.error-message {
+    animation: fadeIn 0.3s ease-out;
+    font-size: 12px !important;
+    margin-top: 4px !important;
+    display: block;
+    clear: both;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Indicador de contraseña */
+.password-strength {
+    margin-top: 0.5rem;
+    height: 4px;
+    width: 100%;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.password-strength-meter {
+    height: 100%;
+    width: 0;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.password-strength-weak {
+    width: 33%;
+    background-color: #ef4444;
+}
+
+.password-strength-medium {
+    width: 66%;
+    background-color: #f59e0b;
+}
+
+.password-strength-strong {
+    width: 100%;
+    background-color: #10b981;
+}
+
+/* Campos de formulario con estado */
+.input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    pointer-events: none;
+    z-index: 2;
+    font-size: 16px;
+}
+
+.input-icon.valid {
+    color: #10b981;
+}
+
+.input-icon.invalid {
+    color: #ef4444;
+}
+
+.input-container input {
+    padding-right: 35px !important;
+    width: 100%;
+}
+
+/* Animación para elementos visibles al scrollear */
+.fade-in-element {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in-element.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Navbar con efecto de cristal */
+.navbar-scrolled {
+    background-color: rgba(17, 24, 39, 0.9) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Carrusel */
+.carousel-slides {
+    margin: 2rem 0;
+    min-height: 400px;
+}
+
+.carousel-slide {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.carousel-slide.active {
+    opacity: 1;
+    visibility: visible;
+    position: relative;
+}
+
+.carousel-navigation {
+    margin-top: 20px;
+}
+
+.carousel-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    display: inline-block;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.carousel-dot.active {
+    background-color: #ffffff;
+}
+
+.carousel-control {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-control:hover {
+    opacity: 1;
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+    .hero-section {
+        height: 400px;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .flash-message {
+        max-width: 90%;
+    }
+}

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DGARD - Configuración</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/perfil.css') }}">
+</head>
+<body class="font-sans bg-gray-100">
+    <!-- Navbar (igual que en perfil.html) -->
+    <nav class="bg-gray-900 text-white p-4">
+        <!-- ... contenido del navbar ... -->
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+            <h1 class="text-2xl font-bold mb-6 text-gray-800">Configuración de Cuenta</h1>
+            
+            <form action="{{ url_for('configuracion') }}" method="POST">
+                <!-- Secciones con tabs -->
+                <div class="mb-4 border-b border-gray-200">
+                    <ul class="flex flex-wrap -mb-px">
+                        <li class="mr-2">
+                            <button type="button" class="tab-btn inline-block py-2 px-4 text-blue-600 border-b-2 border-blue-600 font-medium" data-tab="password">
+                                Contraseña
+                            </button>
+                        </li>
+                        <li class="mr-2">
+                            <button type="button" class="tab-btn inline-block py-2 px-4 text-gray-500 hover:text-gray-700 font-medium" data-tab="profile">
+                                Datos Personales
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Sección de Contraseña -->
+                <div id="tab-password" class="tab-content">
+                    <div class="mb-4">
+                        <label for="current_password" class="block text-gray-700 font-medium mb-2">Contraseña Actual</label>
+                        <input type="password" id="current_password" name="current_password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="new_password" class="block text-gray-700 font-medium mb-2">Nueva Contraseña</label>
+                        <input type="password" id="new_password" name="new_password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <p class="text-sm text-gray-500 mt-1">Mínimo 8 caracteres con al menos un número</p>
+                    </div>
+                    <div class="mb-4">
+                        <label for="confirm_password" class="block text-gray-700 font-medium mb-2">Confirmar Nueva Contraseña</label>
+                        <input type="password" id="confirm_password" name="confirm_password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                </div>
+                
+                <!-- Sección de Datos Personales -->
+                <div id="tab-profile" class="tab-content hidden">
+                    <div class="mb-4">
+                        <label for="nombres" class="block text-gray-700 font-medium mb-2">Nombres</label>
+                        <input type="text" id="nombres" name="nombres" value="{{ user.nombres }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="apellidos" class="block text-gray-700 font-medium mb-2">Apellidos</label>
+                        <input type="text" id="apellidos" name="apellidos" value="{{ user.apellidos }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="telefono" class="block text-gray-700 font-medium mb-2">Teléfono</label>
+                        <input type="text" id="telefono" name="telefono" value="{{ user.numero_telefonico }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="text-sm text-gray-500 mt-1">10 dígitos numéricos</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">Correo Electrónico</label>
+                        <input type="email" value="{{ user.correo }}" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled>
+                        <p class="text-sm text-gray-500 mt-1">El correo no se puede modificar</p>
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="mt-6 flex justify-end">
+                    <a href="{{ url_for('perfil') }}" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 mr-2">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de mensajes flash -->
+    <div id="flash-messages" class="fixed top-4 right-4 z-50">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="bg-{{ 'green' if category == 'success' else 'red' }}-100 border-l-4 border-{{ 'green' if category == 'success' else 'red' }}-500 text-{{ 'green' if category == 'success' else 'red' }}-700 p-4 mb-2 rounded shadow-md" role="alert">
+                    <p>{{ message }}</p>
+                    <button type="button" class="float-right" onclick="this.parentElement.style.display='none';">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/perfil.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/config-modal.js') }}"></script>
+</body>
+</html>

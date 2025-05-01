@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventos de Movimiento - DGard</title>
+    <!-- Incluir tus estilos CSS aquí -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <!-- Incluye tu encabezado y navegación aquí -->
+    
+    <div class="container">
+        <h1>Eventos de Movimiento</h1>
+        
+        {% if eventos %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Cámara</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evento in eventos %}
+                            <tr>
+                                <td>{{ evento.fecha_evento }}</td>
+                                <td>{{ evento.hora_evento }}</td>
+                                <td>{{ evento.nombre_posicion }}</td>
+                                <td>{{ evento.descripcion }}</td>
+                                <td>
+                                    {% if evento.revisado %}
+                                        <span class="badge bg-success">Revisado</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-primary">Ver</a>
+                                    {% if not evento.revisado %}
+                                        <a href="#" class="btn btn-sm btn-success">Marcar como revisado</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                No hay eventos de movimiento registrados.
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Incluye tu pie de página aquí -->
+    
+    <!-- Scripts JavaScript -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+</html>
