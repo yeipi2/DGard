@@ -292,21 +292,24 @@
         </div>
     </div>
 
-    <!-- Modal de mensajes flash -->
-    <div id="flash-messages" class="fixed top-4 right-4 z-50">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                <div class="bg-{{ 'green' if category == 'success' else 'red' }}-100 border-l-4 border-{{ 'green' if category == 'success' else 'red' }}-500 text-{{ 'green' if category == 'success' else 'red' }}-700 p-4 mb-2 rounded shadow-md" role="alert">
-                    <p>{{ message }}</p>
-                    <button type="button" class="float-right" onclick="this.parentElement.style.display='none';">
+<!-- Reemplazar el contenedor de mensajes flash actual -->
+<div id="flash-messages" class="fixed top-4 right-4 z-50">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash-message flash-message-{{ category }}">
+                <div class="flash-content">
+                    <div class="flash-icon"></div>
+                    <div class="flash-text">{{ message }}</div>
+                    <button type="button" class="close-flash" onclick="this.parentElement.parentElement.style.display='none';">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
 
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/reportes.js') }}"></script>

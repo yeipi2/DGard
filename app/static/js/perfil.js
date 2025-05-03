@@ -266,7 +266,7 @@ function markAlertAsReviewed(alertId) {
             // Recargar notificaciones
             loadNotifications();
             
-            // Mostrar mensaje de éxito
+            // Mostrar mensaje de éxito usando el nuevo formato
             showSuccess('Alerta marcada como revisada');
         }
     })
@@ -362,47 +362,141 @@ function formatTime(timeString) {
     }
 }
 
-// Mostrar mensaje de éxito temporal (adaptado de reportes.js)
+// Mostrar mensaje de éxito temporal (corregido para usar el estilo de flash message)
 function showSuccess(message) {
     const flashContainer = document.getElementById('flash-messages');
     const alert = document.createElement('div');
     
-    alert.className = 'bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-2 rounded shadow-md fade-in';
+    // Usar la misma estructura HTML que los mensajes flash del servidor
+    alert.className = 'new-message-box flash-message';
     alert.innerHTML = `
-        <p>${message}</p>
-        <button type="button" class="float-right" onclick="this.parentElement.remove();">
+        <div class="new-message-box-success">
+            <div class="info-tab tip-icon-success" title="success"><i></i></div>
+            <div class="tip-box-success">
+                <p>${message}</p>
+            </div>
+        </div>
+        <button type="button" class="close-flash absolute top-2 right-2 text-gray-500 hover:text-gray-700">
             <i class="fas fa-times"></i>
         </button>
     `;
     
     flashContainer.appendChild(alert);
     
+    // Configurar el botón de cierre
+    const closeButton = alert.querySelector('.close-flash');
+    if (closeButton) {
+        closeButton.addEventListener('click', function() {
+            fadeOutAndRemove(alert);
+        });
+    }
+    
     // Eliminar automáticamente después de 5 segundos
     setTimeout(() => {
-        alert.classList.add('fade-out');
-        setTimeout(() => alert.remove(), 300);
+        fadeOutAndRemove(alert);
     }, 5000);
 }
 
-// Mostrar mensaje de error temporal (adaptado de reportes.js)
+// Mostrar mensaje de error temporal (corregido para usar el estilo de flash message)
 function showError(message) {
     const flashContainer = document.getElementById('flash-messages');
     const alert = document.createElement('div');
     
-    alert.className = 'bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-2 rounded shadow-md fade-in';
+    // Usar la misma estructura HTML que los mensajes flash del servidor
+    alert.className = 'new-message-box flash-message';
     alert.innerHTML = `
-        <p>${message}</p>
-        <button type="button" class="float-right" onclick="this.parentElement.remove();">
+        <div class="new-message-box-danger">
+            <div class="info-tab tip-icon-danger" title="error"><i></i></div>
+            <div class="tip-box-danger">
+                <p>${message}</p>
+            </div>
+        </div>
+        <button type="button" class="close-flash absolute top-2 right-2 text-gray-500 hover:text-gray-700">
             <i class="fas fa-times"></i>
         </button>
     `;
     
     flashContainer.appendChild(alert);
     
+    // Configurar el botón de cierre
+    const closeButton = alert.querySelector('.close-flash');
+    if (closeButton) {
+        closeButton.addEventListener('click', function() {
+            fadeOutAndRemove(alert);
+        });
+    }
+    
     // Eliminar automáticamente después de 5 segundos
     setTimeout(() => {
-        alert.classList.add('fade-out');
-        setTimeout(() => alert.remove(), 300);
+        fadeOutAndRemove(alert);
+    }, 5000);
+}
+
+// Crear función para mostrar warning con el mismo estilo que los mensajes flash
+function showWarning(message) {
+    const flashContainer = document.getElementById('flash-messages');
+    const alert = document.createElement('div');
+    
+    alert.className = 'new-message-box flash-message';
+    alert.innerHTML = `
+        <div class="new-message-box-warning">
+            <div class="info-tab tip-icon-warning" title="warning"><i></i></div>
+            <div class="tip-box-warning">
+                <p>${message}</p>
+            </div>
+        </div>
+        <button type="button" class="close-flash absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    flashContainer.appendChild(alert);
+    
+    // Configurar el botón de cierre
+    const closeButton = alert.querySelector('.close-flash');
+    if (closeButton) {
+        closeButton.addEventListener('click', function() {
+            fadeOutAndRemove(alert);
+        });
+    }
+    
+    // Eliminar automáticamente después de 5 segundos
+    setTimeout(() => {
+        fadeOutAndRemove(alert);
+    }, 5000);
+}
+
+// Crear función para mostrar info con el mismo estilo que los mensajes flash
+function showInfo(message) {
+    const flashContainer = document.getElementById('flash-messages');
+    const alert = document.createElement('div');
+    
+    alert.className = 'new-message-box flash-message';
+    alert.innerHTML = `
+        <div class="new-message-box-info">
+            <div class="info-tab tip-icon-info" title="info"><i></i></div>
+            <div class="tip-box-info">
+                <p>${message}</p>
+            </div>
+        </div>
+        <button type="button" class="close-flash absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    flashContainer.appendChild(alert);
+    
+    // Configurar el botón de cierre
+    const closeButton = alert.querySelector('.close-flash');
+    if (closeButton) {
+        closeButton.addEventListener('click', function() {
+            fadeOutAndRemove(alert);
+        });
+    }
+    
+    // Eliminar automáticamente después de 5 segundos
+    setTimeout(() => {
+        fadeOutAndRemove(alert);
     }, 5000);
 }
 

@@ -197,3 +197,119 @@ body, html {
         grid-template-rows: repeat(auto-fit, 1fr);
     }
 }
+/* Estilos para el botón de pantalla completa */
+.fullscreen-btn {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    margin-right: 5px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    z-index: 10; /* Asegurar que el botón está por encima de otros elementos */
+}
+
+.fullscreen-btn:hover {
+    background: rgba(59, 130, 246, 0.7);
+    transform: scale(1.05);
+}
+
+/* Estilos para la vista de pantalla completa */
+#fullscreen-view {
+    transition: opacity 0.3s ease;
+    z-index: 1000 !important; /* Asegurar que está por encima de todo */
+}
+
+#fullscreen-view.visible
+
+#fullscreen-view.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#fullscreen-view.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#fullscreen-image {
+    max-width: 100%;
+    max-height: calc(100vh - 120px);
+    object-fit: contain;
+    transition: opacity 0.3s;
+}
+
+#fullscreen-title {
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+#close-fullscreen {
+    transition: transform 0.2s;
+}
+
+#close-fullscreen:hover {
+    transform: scale(1.1);
+}
+
+#refresh-fullscreen {
+    transition: transform 0.2s;
+}
+
+#refresh-fullscreen:hover {
+    transform: rotate(90deg);
+}
+
+/* Estilos para estados en pantalla completa */
+#fullscreen-offline {
+    width: 150px;
+    height: 150px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.7;
+}
+
+#fullscreen-checking {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#fullscreen-status .status-dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+#fullscreen-status .status-dot.online {
+    background-color: #10B981; /* green-500 */
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+#fullscreen-status .status-dot.offline {
+    background-color: #EF4444; /* red-500 */
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+#fullscreen-status .status-dot.checking {
+    background-color: #F59E0B; /* yellow-500 */
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+/* Ajustes responsive para pantalla completa */
+@media (max-width: 768px) {
+    #fullscreen-view .relative {
+        padding: 10px;
+    }
+    
+    #fullscreen-title {
+        font-size: 1rem;
+    }
+}

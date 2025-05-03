@@ -39,13 +39,15 @@
                                  src="http://{{ camera.ip_camara }}/stream" 
                                  alt="{{ camera.nombre_posicion }}"
                                  data-camera-ip="{{ camera.ip_camara }}"
+                                 data-camera-name="{{ camera.nombre_posicion }}"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block'; handleCameraOffline(this);"
                                  onload="handleCameraOnline(this);">
                                  
                             <!-- Imagen para estado 'offline' -->
-                            <img class="cam-offline hidden" 
-                            src="/static/img/camera-off-512.png"
-                                 alt="Cámara desconectada">
+                            <img class="cam-offline" 
+                                 src="/static/img/camera-off-512.png"
+                                 alt="Cámara desconectada"
+                                 style="display: none;">
                                  
                             <!-- Indicador para estado 'verificando' -->
                             <div class="cam-checking flex items-center justify-center h-full">
@@ -61,6 +63,9 @@
                         <div class="camera-actions">
                             <button class="action-btn refresh-btn" data-camera-ip="{{ camera.ip_camara }}">
                                 <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="action-btn fullscreen-btn" data-camera-ip="{{ camera.ip_camara }}" data-camera-name="{{ camera.nombre_posicion }}">
+                                <i class="fas fa-expand"></i>
                             </button>
                         </div>
                         
@@ -105,16 +110,32 @@
     </div>
 
     <!-- Vista de cámara en pantalla completa -->
-    <div id="fullscreen-view" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden">
+    <div id="fullscreen-view" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50" style="display: none;">
         <div class="relative w-full h-full max-w-6xl max-h-full p-4 flex flex-col">
             <div class="flex justify-between items-center text-white mb-2">
                 <h3 id="fullscreen-title" class="text-xl font-semibold">Cámara</h3>
-                <button id="close-fullscreen" class="text-white hover:text-gray-300 text-2xl">
-                    <i class="fas fa-times"></i>
-                </button>
+                <div class="flex items-center">
+                    <button id="refresh-fullscreen" class="action-btn mr-3">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button id="close-fullscreen" class="action-btn">
+                        <i class="fas fa-compress"></i>
+                    </button>
+                </div>
             </div>
-            <div class="flex-grow flex items-center justify-center">
-                <img id="fullscreen-image" class="max-w-full max-h-full object-contain" src="">
+            <div class="flex-grow flex items-center justify-center bg-black relative">
+                <img id="fullscreen-image" class="max-w-full max-h-full object-contain" src="" alt="Cámara en pantalla completa" style="display: none;">
+                <div id="fullscreen-checking" class="absolute inset-0 flex items-center justify-center" style="display: none;">
+                    <i class="fas fa-spinner fa-spin text-gray-400 text-5xl"></i>
+                </div>
+                <img id="fullscreen-offline" class="absolute" src="/static/img/camera-off-512.png" alt="Cámara desconectada" style="display: none;">
+            </div>
+            <div class="flex justify-between items-center mt-2 text-white text-sm">
+                <div id="fullscreen-status" class="flex items-center">
+                    <span class="status-dot offline mr-2"></span>
+                    <span id="fullscreen-status-text">Verificando...</span>
+                </div>
+                <div id="fullscreen-time" class="text-sm"></div>
             </div>
         </div>
     </div>

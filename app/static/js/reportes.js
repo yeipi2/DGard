@@ -184,82 +184,6 @@ function loadReportData() {
             loadDemoData();
         });
 }
-
-// Cargar datos de demostración para desarrollo
-function loadDemoData() {
-    // Datos de ejemplo para las gráficas
-    const demoData = {
-        stats: {
-            total_alerts: 147,
-            recent_alerts: 24,
-            reviewed_alerts: 89
-        },
-        charts: {
-            byDay: {
-                labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
-                data: [12, 19, 8, 15, 24, 10, 6]
-            },
-            byCamera: {
-                labels: ['Entrada principal', 'Estacionamiento', 'Centro de datos'],
-                data: [65, 40, 42]
-            },
-            trend: {
-                labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
-                datasets: [
-                    {
-                        label: 'Alertas',
-                        data: [35, 42, 28, 42],
-                        borderColor: chartColors.blue,
-                        backgroundColor: chartColors.blueLight,
-                    }
-                ]
-            }
-        },
-        alerts: [
-            {
-                nombre_posicion: 'Entrada principal',
-                descripcion: 'Movimiento detectado - persona',
-                fecha_evento: '2025-04-25',
-                hora_evento: '14:32:18',
-                revisado: false
-            },
-            {
-                nombre_posicion: 'Estacionamiento',
-                descripcion: 'Movimiento detectado - vehículo',
-                fecha_evento: '2025-04-25',
-                hora_evento: '13:15:42',
-                revisado: true
-            },
-            {
-                nombre_posicion: 'Centro de datos',
-                descripcion: 'Movimiento detectado - persona',
-                fecha_evento: '2025-04-24',
-                hora_evento: '19:22:05',
-                revisado: false
-            },
-            {
-                nombre_posicion: 'Entrada principal',
-                descripcion: 'Movimiento detectado - persona',
-                fecha_evento: '2025-04-24',
-                hora_evento: '16:48:33',
-                revisado: true
-            },
-            {
-                nombre_posicion: 'Centro de datos',
-                descripcion: 'Movimiento detectado - persona',
-                fecha_evento: '2025-04-23',
-                hora_evento: '09:02:11',
-                revisado: false
-            }
-        ]
-    };
-    
-    // Actualizar la UI con los datos de demo
-    updateStats(demoData.stats);
-    createOrUpdateCharts(demoData.charts);
-    updateAlertsTable(demoData.alerts);
-}
-
 // Actualizar contadores estadísticos
 function updateStats(stats) {
     document.getElementById('total-alerts').textContent = stats.total_alerts;
@@ -590,17 +514,20 @@ function setupNotifications() {
     setInterval(loadNotifications, 30000);
 }
 
-// Mostrar mensaje de éxito temporal
+// Mostrar mensaje de éxito temporal con el nuevo estilo
 function showSuccess(message) {
     const flashContainer = document.getElementById('flash-messages');
     const alert = document.createElement('div');
     
-    alert.className = 'bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-2 rounded shadow-md fade-in';
+    alert.className = 'flash-message flash-message-success';
     alert.innerHTML = `
-        <p>${message}</p>
-        <button type="button" class="float-right" onclick="this.parentElement.remove();">
-            <i class="fas fa-times"></i>
-        </button>
+        <div class="flash-content">
+            <div class="flash-icon"></div>
+            <div class="flash-text">${message}</div>
+            <button type="button" class="close-flash" onclick="this.parentElement.parentElement.remove();">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     `;
     
     flashContainer.appendChild(alert);
@@ -612,17 +539,70 @@ function showSuccess(message) {
     }, 5000);
 }
 
-// Mostrar mensaje de error temporal
+// Mostrar mensaje de error temporal con el nuevo estilo
 function showError(message) {
     const flashContainer = document.getElementById('flash-messages');
     const alert = document.createElement('div');
     
-    alert.className = 'bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-2 rounded shadow-md fade-in';
+    alert.className = 'flash-message flash-message-error';
     alert.innerHTML = `
-        <p>${message}</p>
-        <button type="button" class="float-right" onclick="this.parentElement.remove();">
-            <i class="fas fa-times"></i>
-        </button>
+        <div class="flash-content">
+            <div class="flash-icon"></div>
+            <div class="flash-text">${message}</div>
+            <button type="button" class="close-flash" onclick="this.parentElement.parentElement.remove();">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    flashContainer.appendChild(alert);
+    
+    // Eliminar automáticamente después de 5 segundos
+    setTimeout(() => {
+        alert.classList.add('fade-out');
+        setTimeout(() => alert.remove(), 300);
+    }, 5000);
+}
+
+// Función para mostrar advertencias
+function showWarning(message) {
+    const flashContainer = document.getElementById('flash-messages');
+    const alert = document.createElement('div');
+    
+    alert.className = 'flash-message flash-message-warning';
+    alert.innerHTML = `
+        <div class="flash-content">
+            <div class="flash-icon"></div>
+            <div class="flash-text">${message}</div>
+            <button type="button" class="close-flash" onclick="this.parentElement.parentElement.remove();">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    flashContainer.appendChild(alert);
+    
+    // Eliminar automáticamente después de 5 segundos
+    setTimeout(() => {
+        alert.classList.add('fade-out');
+        setTimeout(() => alert.remove(), 300);
+    }, 5000);
+}
+
+// Función para mostrar información
+function showInfo(message) {
+    const flashContainer = document.getElementById('flash-messages');
+    const alert = document.createElement('div');
+    
+    alert.className = 'flash-message flash-message-info';
+    alert.innerHTML = `
+        <div class="flash-content">
+            <div class="flash-icon"></div>
+            <div class="flash-text">${message}</div>
+            <button type="button" class="close-flash" onclick="this.parentElement.parentElement.remove();">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
     `;
     
     flashContainer.appendChild(alert);

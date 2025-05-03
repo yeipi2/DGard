@@ -179,14 +179,170 @@ button[type="submit"]:active,
     100% { transform: rotate(360deg); }
 }
 
+/* Contenedor principal de mensajes flash */
 #flash-messages {
+    position: fixed;
+    top: 20px;
+    right: 20px;
     z-index: 9999;
+    max-width: 400px;
+    width: 100%;
 }
 
-#flash-messages div {
-    margin-bottom: 10px;
+/* Estilos base para mensajes flash */
+.flash-message {
     position: relative;
-    animation: slideIn 0.3s ease-out;
+    margin-bottom: 15px;
+    padding: 3px;
+    animation: slideIn 0.5s ease-out;
+    transition: opacity 0.6s ease;
+    max-width: 100%;
+    word-wrap: break-word;
+    background: #eeeeee;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Contenido interno del mensaje */
+.flash-content {
+    position: relative;
+    padding: 12px 8px 12px 50px;
+    border-radius: 2px;
+    min-height: 65px;
+    display: flex;
+    align-items: center;
+}
+
+/* Icono del mensaje (tab izquierda) */
+.flash-icon {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 0 3px 3px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flash-icon:before {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    font-size: 20px;
+    color: white;
+}
+
+/* Texto del mensaje */
+.flash-text {
+    font-size: 1.05em;
+    font-weight: 500;
+    line-height: 1.2;
+    padding-right: 30px;
+}
+
+/* Botón para cerrar */
+.close-flash {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.close-flash:hover {
+    opacity: 1;
+}
+
+/* Tipos de mensajes */
+/* Éxito */
+.flash-message-success .flash-content {
+    color: #33691E;
+    background: #DCEDC8;
+}
+
+.flash-message-success .flash-icon {
+    background: #8BC34A;
+}
+
+.flash-message-success .flash-icon:before {
+    content: "\f00c";
+}
+
+/* Error */
+.flash-message-error .flash-content {
+    color: #b71c1c;
+    background: #FFCCBC;
+}
+
+.flash-message-error .flash-icon {
+    background: #f44336;
+}
+
+.flash-message-error .flash-icon:before {
+    content: "\f00d";
+}
+
+/* Información */
+.flash-message-info .flash-content {
+    color: #01579B;
+    background: #B3E5FC;
+}
+
+.flash-message-info .flash-icon {
+    background: #03A9F4;
+}
+
+.flash-message-info .flash-icon:before {
+    content: "\f129";
+}
+
+/* Advertencia */
+.flash-message-warning .flash-content {
+    color: #212121;
+    background: #FFF9C4;
+}
+
+.flash-message-warning .flash-icon {
+    background: #FFEB3B;
+}
+
+.flash-message-warning .flash-icon:before {
+    content: "\f071";
+}
+
+/* Animación de entrada */
+@keyframes slideIn {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Animación de salida */
+.fade-out {
+    animation: fadeOut 0.3s forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
 }
 
 @keyframes slideIn {

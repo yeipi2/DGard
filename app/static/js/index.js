@@ -128,6 +128,7 @@ function initializeModals() {
 
 /**
  * Configura el carrusel de imágenes y textos para el hero section
+ * con precarga de imágenes para mejorar el rendimiento
  */
 function setupCarousel() {
     const carousel = document.getElementById('hero-carousel');
@@ -139,11 +140,53 @@ function setupCarousel() {
     const nextBtn = carousel.querySelector('.carousel-control.next');
     let currentIndex = 0;
     let interval;
+    let imagesLoaded = false;
     
     const heroSection = document.querySelector('.hero-section');
-    // Array de imágenes de fondo (se deben colocar en la carpeta static/img)
-    const bgImages = ['img1.jpg', 'img2.jpg', 'img3.jpg', 'img4.jpg', 'img5.jpg'];
     
+    // Array de imágenes de fondo
+    const bgImages = ['img1.jpg', 'img2.jpg', 'img3.jpg', 'img4.jpg', 'img5.jpg'];
+    const preloadedImages = [];
+    
+    // Crear un indicador de carga
+    const loader = document.createElement('div');
+    loader.id = 'carousel-loader';
+    loader.className = 'absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10';
+    loader.innerHTML = '<div class="loader-spinner"></div>';
+    carousel.prepend(loader);
+    
+    // Función para precargar todas las imágenes
+    function preloadImages() {
+        return new Promise((resolve) => {
+            let loadedCount = 0;
+            
+            bgImages.forEach((src, index) => {
+                // Crear un nuevo objeto de imagen para precargar
+                preloadedImages[index] = new Image();
+                preloadedImages[index].src = `/static/img/${src}`;
+                
+                // Evento cuando la imagen se carga
+                preloadedImages[index].onload = () => {
+                    loadedCount++;
+                    if (loadedCount === bgImages.length) {
+                        imagesLoaded = true;
+                        resolve();
+                    }
+                };
+                
+                // En caso de error, consideramos como cargada para no bloquear
+                preloadedImages[index].onerror = () => {
+                    console.error(`Error al cargar imagen: ${src}`);
+                    loadedCount++;
+                    if (loadedCount === bgImages.length) {
+                        imagesLoaded = true;
+                        resolve();
+                    }
+                };
+            });
+        });
+    }
+
     // Limpiar navegación primero (para evitar duplicados)
     navContainer.innerHTML = '';
     
@@ -157,14 +200,17 @@ function setupCarousel() {
     });
     
     function updateBackground(index) {
-        // Actualizar imagen de fondo según el índice
-        if (index < bgImages.length) {
-            // Asegurarse de que la ruta es correcta
+        // Si tenemos la imagen precargada, usamos directamente
+        if (imagesLoaded && preloadedImages[index]) {
+            heroSection.style.backgroundImage = `url('${preloadedImages[index].src}')`;
+        } else {
+            // Fallback al método original si aún no están cargadas
             heroSection.style.backgroundImage = `url('/static/img/${bgImages[index]}')`;
-            // Agregamos un overlay oscuro para mejorar la legibilidad del texto
-            heroSection.style.backgroundPosition = 'center';
-            heroSection.style.backgroundSize = 'cover';
         }
+        
+        // Configuración adicional del fondo
+        heroSection.style.backgroundPosition = 'center';
+        heroSection.style.backgroundSize = 'cover';
     }
     
     function goToSlide(index) {
@@ -205,9 +251,18 @@ function setupCarousel() {
     if (prevBtn) prevBtn.addEventListener('click', prevSlide);
     if (nextBtn) nextBtn.addEventListener('click', nextSlide);
     
-    // Iniciar el carrusel
-    updateBackground(0); // Establecer imagen inicial
-    resetInterval();
+    // Iniciar el carrusel con precarga
+    preloadImages().then(() => {
+        // Ocultar el indicador de carga
+        loader.classList.add('hidden');
+        
+        // Establecer imagen inicial
+        updateBackground(0);
+        resetInterval();
+    });
+    
+    // Mientras tanto, mostrar la primera imagen para no tener un carrusel vacío
+    updateBackground(0);
     
     // Pausar rotación al pasar el mouse sobre el carrusel
     carousel.addEventListener('mouseenter', () => clearInterval(interval));
