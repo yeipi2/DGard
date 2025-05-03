@@ -2,6 +2,7 @@
 let barChart = null;
 let pieChart = null;
 let lineChart = null;
+let duracionChart = null;
 
 // Colores para las gráficas
 const chartColors = {
@@ -30,6 +31,45 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar notificaciones
     setupNotifications();
     updateNotificationCounter();
+    
+    // Añadir manejador para filtro de cámara específico de duración
+    const duracionCameraFilter = document.getElementById('duracion-camera-filter');
+    if (duracionCameraFilter) {
+        // Llenar el filtro con las mismas opciones que el filtro principal
+        const mainCameraFilter = document.getElementById('camera-filter');
+        if (mainCameraFilter) {
+            // Clonar opciones del filtro principal
+            Array.from(mainCameraFilter.options).forEach(option => {
+                const newOption = document.createElement('option');
+                newOption.value = option.value;
+                newOption.text = option.text;
+                duracionCameraFilter.appendChild(newOption);
+            });
+        }
+        // Añadir evento para actualizar cuando cambia el filtro
+        duracionCameraFilter.addEventListener('change', cargarDatosDuracion);
+    }
+    
+    // Añadir evento para el botón de actualizar
+    const refreshDuracionBtn = document.getElementById('refresh-duracion');
+    if (refreshDuracionBtn) {
+        refreshDuracionBtn.addEventListener('click', cargarDatosDuracion);
+    }
+    
+    // Integrar con el botón de aplicar filtros general
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    if (applyFiltersBtn) {
+        const originalClickHandler = applyFiltersBtn.onclick;
+        applyFiltersBtn.onclick = function(e) {
+            if (originalClickHandler) {
+                originalClickHandler.call(this, e);
+            }
+            cargarDatosDuracion();
+        };
+    }
+    
+    // Inicializar datos de duración
+    cargarDatosDuracion();
 });
 
 // Configurar interacciones de la UI
@@ -397,7 +437,256 @@ function generateReport() {
     });
 }
 
-// Cargar notificaciones desde el servidor
+// Función para clasificar el movimiento según su duración
+function clasificarMovimiento(duracionSegundos) {
+    if (duracionSegundos < 5) {
+        return {
+            nivel: 'bajo',
+            mensaje: 'Actividad breve - posible falso positivo',
+            color: chartColors.green
+        };
+    } else if (duracionSegundos < 20) {
+        return {
+            nivel: 'moderado',
+            mensaje: 'Actividad normal - posible tránsito regular',
+            color: chartColors.blue
+        };
+    } else if (duracionSegundos < 60) {
+        return {
+            nivel: 'alto',
+            mensaje: 'Actividad prolongada - requiere revisión',
+            color: chartColors.yellow
+        };
+    } else {
+        return {
+            nivel: 'crítico',
+            mensaje: 'Actividad sospechosa - revise urgentemente',
+            color: chartColors.red
+        };
+    }
+}
+
+// Función para formatear la duración en formato legible
+function formatearDuracion(segundos) {
+    if (segundos < 60) {
+        return `${segundos} segundos`;
+    } else {
+        const minutos = Math.floor(segundos / 60);
+        const segsRestantes = segundos % 60;
+        return `${minutos} min ${segsRestantes} seg`;
+    }
+}
+
+// Función para cargar los datos de duración de actividad
+function cargarDatosDuracion() {
+    const dateRange = document.getElementById('date-range').value;
+    const cameraId = document.getElementById('duracion-camera-filter').value || 'all';
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    
+    // Mostrar indicador de carga
+    showLoading();
+    
+    // Construir parámetros de la URL
+    const params = new URLSearchParams();
+    params.append('range', dateRange);
+    params.append('camera', cameraId);
+    
+    if (dateRange === 'custom') {
+        params.append('start_date', startDate);
+        params.append('end_date', endDate);
+    }
+    
+    // Realizar petición al servidor
+    fetch(`/api/reportes/duracion?${params.toString()}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al cargar datos de duración');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Actualizar contadores de clasificación
+            actualizarContadoresDuracion(data.stats);
+            
+            // Actualizar gráfica de duración promedio
+            actualizarGraficaDuracion(data.promedios);
+            
+            // Actualizar tabla de eventos de larga duración
+            actualizarTablaDuracion(data.eventos);
+            
+            // Ocultar indicador de carga
+            hideLoading();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Error al cargar los datos de duración. Por favor intente nuevamente.');
+            hideLoading();
+            
+            // Cargar datos de ejemplo en caso de error
+            cargarDatosDuracionEjemplo();
+        });
+}
+
+// Función para actualizar contadores de duración
+function actualizarContadoresDuracion(stats) {
+    document.getElementById('duracion-bajo').textContent = stats.bajo || 0;
+    document.getElementById('duracion-moderado').textContent = stats.moderado || 0;
+    document.getElementById('duracion-alto').textContent = stats.alto || 0;
+    document.getElementById('duracion-critico').textContent = stats.critico || 0;
+}
+
+// Función para actualizar la gráfica de duración promedio
+function actualizarGraficaDuracion(datos) {
+    const ctx = document.getElementById('duracionPromedio').getContext('2d');
+    
+    // Preparar datos para la gráfica
+    const labels = datos.map(item => item.nombre_posicion);
+    const duraciones = datos.map(item => item.duracion_promedio);
+    
+    // Crear array de colores basados en la clasificación
+    const backgroundColors = duraciones.map(duracion => {
+        return clasificarMovimiento(duracion).color;
+    });
+    
+    // Si ya existe la gráfica, actualizarla
+    if (duracionChart) {
+        duracionChart.data.labels = labels;
+        duracionChart.data.datasets[0].data = duraciones;
+        duracionChart.data.datasets[0].backgroundColor = backgroundColors;
+        duracionChart.update();
+    } else {
+        // Crear nueva gráfica
+        duracionChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Duración promedio (segundos)',
+                    data: duraciones,
+                    backgroundColor: backgroundColors,
+                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Segundos'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const duracion = context.raw;
+                                const clasificacion = clasificarMovimiento(duracion);
+                                return clasificacion.mensaje;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Función para actualizar la tabla de eventos de larga duración
+function actualizarTablaDuracion(eventos) {
+    const tableBody = document.getElementById('duracion-table-body');
+    
+    // Limpiar tabla
+    tableBody.innerHTML = '';
+    
+    if (!eventos || eventos.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="px-4 py-2 text-center text-gray-500">No hay eventos prolongados en el período seleccionado</td></tr>';
+        return;
+    }
+    
+    // Añadir filas para cada evento
+    eventos.forEach(evento => {
+        const clasificacion = clasificarMovimiento(evento.duracion_segundos);
+        const fechaHora = `${evento.fecha_evento} ${evento.hora_evento}`;
+        const duracionFormateada = formatearDuracion(evento.duracion_segundos);
+        
+        const colorClase = {
+            'bajo': 'bg-green-100 text-green-800',
+            'moderado': 'bg-blue-100 text-blue-800',
+            'alto': 'bg-yellow-100 text-yellow-800',
+            'crítico': 'bg-red-100 text-red-800'
+        }[clasificacion.nivel];
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-4 py-2">${evento.nombre_posicion}</td>
+            <td class="px-4 py-2">${fechaHora}</td>
+            <td class="px-4 py-2">${duracionFormateada}</td>
+            <td class="px-4 py-2">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colorClase}">
+                    ${clasificacion.nivel.charAt(0).toUpperCase() + clasificacion.nivel.slice(1)}
+                </span>
+            </td>
+            <td class="px-4 py-2">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${evento.revisado ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                    ${evento.revisado ? 'Revisado' : 'Pendiente'}
+                </span>
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+}
+
+// Función para cargar datos de ejemplo en caso de error
+function cargarDatosDuracionEjemplo() {
+    const statsEjemplo = {
+        bajo: 15,
+        moderado: 8,
+        alto: 4,
+        critico: 1
+    };
+    
+    const promediosEjemplo = [
+        { nombre_posicion: 'Entrada principal', duracion_promedio: 3.5 },
+        { nombre_posicion: 'Estacionamiento', duracion_promedio: 12.8 },
+        { nombre_posicion: 'Centro de datos', duracion_promedio: 25.2 }
+    ];
+    
+    const eventosEjemplo = [
+        {
+            nombre_posicion: 'Centro de datos',
+            fecha_evento: '2025-05-01',
+            hora_evento: '14:23:45',
+            duracion_segundos: 25,
+            revisado: false
+        },
+        {
+            nombre_posicion: 'Centro de datos',
+            fecha_evento: '2025-05-02',
+            hora_evento: '09:15:32',
+            duracion_segundos: 42,
+            revisado: true
+        },
+        {
+            nombre_posicion: 'Estacionamiento',
+            fecha_evento: '2025-05-03',
+            hora_evento: '01:45:12',
+            duracion_segundos: 78,
+            revisado: false
+        }
+    ];
+    
+    actualizarContadoresDuracion(statsEjemplo);
+    actualizarGraficaDuracion(promediosEjemplo);
+    actualizarTablaDuracion(eventosEjemplo);
+}
+
 function loadNotifications() {
     fetch('/alertas/obtener')
         .then(response => {

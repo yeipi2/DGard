@@ -856,6 +856,154 @@ def reportes_data():
         app.logger.error(f"Error en reportes_data: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/reportes/duracion')
+def reportes_duracion():
+    """API para obtener datos de duración de movimiento según filtros"""
+    if 'user_email' not in session:
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    user_email = session['user_email']
+    
+    # Obtener parámetros de la solicitud
+    date_range = request.args.get('range', 'week')
+    camera_id = request.args.get('camera', 'all')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
+        # Obtener todas las cámaras del usuario
+        cursor.execute("""
+            SELECT id_camara FROM camaras 
+            WHERE correo_usuario = %s
+        """, (user_email,))
+        user_cameras = [row['id_camara'] for row in cursor.fetchall()]
+        
+        if not user_cameras:
+            return jsonify({
+                'stats': {'bajo': 0, 'moderado': 0, 'alto': 0, 'critico': 0},
+                'promedios': [],
+                'eventos': []
+            })
+        
+        # Filtrar por cámara específica si se proporciona
+        camera_filter = []
+        if camera_id != 'all' and int(camera_id) in user_cameras:
+            camera_filter = [int(camera_id)]
+        else:
+            camera_filter = user_cameras
+            
+        placeholders = ', '.join(['%s'] * len(camera_filter))
+        
+        # Construir condición de fecha según el rango seleccionado
+        date_condition = ""
+        params = camera_filter.copy()  # Inicializar con las cámaras, ya que siempre serán los primeros parámetros
+        
+        if date_range == 'day':
+            date_condition = "em.fecha_evento >= CURRENT_DATE - INTERVAL '1 day'"
+        elif date_range == 'week':
+            date_condition = "em.fecha_evento >= CURRENT_DATE - INTERVAL '7 days'"
+        elif date_range == 'month':
+            date_condition = "em.fecha_evento >= CURRENT_DATE - INTERVAL '30 days'"
+        elif date_range == 'custom' and start_date and end_date:
+            date_condition = "em.fecha_evento BETWEEN %s::date AND %s::date"
+            params.extend([start_date, end_date])
+        else:
+            # Por defecto, usar una semana
+            date_condition = "em.fecha_evento >= CURRENT_DATE - INTERVAL '7 days'"
+        
+        # 1. Obtener estadísticas de categorización por duración
+        cursor.execute(f"""
+            SELECT 
+                COUNT(CASE WHEN dm.duracion_segundos < 5 THEN 1 END) as bajo,
+                COUNT(CASE WHEN dm.duracion_segundos >= 5 AND dm.duracion_segundos < 20 THEN 1 END) as moderado,
+                COUNT(CASE WHEN dm.duracion_segundos >= 20 AND dm.duracion_segundos < 60 THEN 1 END) as alto,
+                COUNT(CASE WHEN dm.duracion_segundos >= 60 THEN 1 END) as critico
+            FROM duracion_movimiento dm
+            JOIN eventos_movimiento em ON dm.id_evento = em.id_evento
+            WHERE em.id_camara IN ({placeholders})
+            AND {date_condition}
+        """, params)
+        
+        stats = cursor.fetchone()
+        
+        # 2. Obtener duración promedio por cámara
+        cursor.execute(f"""
+            SELECT 
+                c.nombre_posicion,
+                COALESCE(AVG(dm.duracion_segundos), 0) as duracion_promedio
+            FROM camaras c
+            LEFT JOIN eventos_movimiento em ON c.id_camara = em.id_camara
+            LEFT JOIN duracion_movimiento dm ON em.id_evento = dm.id_evento
+            WHERE c.id_camara IN ({placeholders})
+            AND ({date_condition} OR em.id_evento IS NULL)
+            GROUP BY c.nombre_posicion
+            ORDER BY duracion_promedio DESC
+        """, params)
+        
+        promedios = cursor.fetchall()
+        
+        # 3. Obtener eventos de larga duración (> 20 segundos)
+        cursor.execute(f"""
+            SELECT 
+                c.nombre_posicion,
+                em.fecha_evento,
+                em.hora_evento,
+                dm.duracion_segundos,
+                em.revisado
+            FROM duracion_movimiento dm
+            JOIN eventos_movimiento em ON dm.id_evento = em.id_evento
+            JOIN camaras c ON em.id_camara = c.id_camara
+            WHERE em.id_camara IN ({placeholders})
+            AND {date_condition}
+            AND dm.duracion_segundos >= 20
+            ORDER BY dm.duracion_segundos DESC, em.fecha_evento DESC, em.hora_evento DESC
+            LIMIT 10
+        """, params)
+        
+        eventos = cursor.fetchall()
+        
+        # Formatear los datos para JSON
+        formatted_stats = {
+            'bajo': stats['bajo'] if stats else 0,
+            'moderado': stats['moderado'] if stats else 0,
+            'alto': stats['alto'] if stats else 0,
+            'critico': stats['critico'] if stats else 0
+        }
+        
+        formatted_promedios = []
+        for promedio in promedios:
+            formatted_promedios.append({
+                'nombre_posicion': promedio['nombre_posicion'],
+                'duracion_promedio': round(float(promedio['duracion_promedio']), 1)
+            })
+        
+        formatted_eventos = []
+        for evento in eventos:
+            formatted_eventos.append({
+                'nombre_posicion': evento['nombre_posicion'],
+                'fecha_evento': evento['fecha_evento'].strftime('%Y-%m-%d'),
+                'hora_evento': evento['hora_evento'].strftime('%H:%M:%S'),
+                'duracion_segundos': evento['duracion_segundos'],
+                'revisado': evento['revisado']
+            })
+        
+        cursor.close()
+        conn.close()
+        
+        # Construir respuesta JSON
+        return jsonify({
+            'stats': formatted_stats,
+            'promedios': formatted_promedios,
+            'eventos': formatted_eventos
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error en reportes_duracion: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/reportes/generar', methods=['POST'])
 def generar_reporte():
     """API para generar reportes en diferentes formatos (PDF, Excel, CSV)"""
