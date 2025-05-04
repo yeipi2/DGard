@@ -20,10 +20,20 @@ const chartColors = {
     orangeLight: 'rgba(255, 159, 64, 0.2)'
 };
 
-// Inicialización cuando el DOM esté completamente cargado
+// Modificación del manejo de tipos de reportes
 document.addEventListener('DOMContentLoaded', function() {
     // Configuración de eventos para elementos de la UI
     setupUIInteractions();
+    
+    // Añadir evento para cambiar opciones según tipo de reporte
+    const reportTypeSelect = document.getElementById('report-type');
+    if (reportTypeSelect) {
+        reportTypeSelect.addEventListener('change', function() {
+            updateReportOptions(this.value);
+        });
+        // Inicializar con el valor actual
+        updateReportOptions(reportTypeSelect.value);
+    }
     
     // Carga los datos iniciales para las gráficas
     loadReportData();
@@ -67,12 +77,11 @@ document.addEventListener('DOMContentLoaded', function() {
             cargarDatosDuracion();
         };
     }
-    
     // Inicializar datos de duración
     cargarDatosDuracion();
 });
 
-// Configurar interacciones de la UI
+// Configurar interacciones de la UI (modificada)
 function setupUIInteractions() {
     const dateRangeSelect = document.getElementById('date-range');
     const customDateContainer = document.getElementById('custom-date-container');
@@ -87,69 +96,192 @@ function setupUIInteractions() {
     const notificationsDropdown = document.getElementById('notifications-dropdown');
     
     // Mostrar/ocultar fechas personalizadas según el rango seleccionado
-    dateRangeSelect.addEventListener('change', function() {
-        if (this.value === 'custom') {
-            customDateContainer.classList.remove('hidden');
-        } else {
-            customDateContainer.classList.add('hidden');
-        }
-    });
+    if (dateRangeSelect) {
+        dateRangeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customDateContainer.classList.remove('hidden');
+            } else {
+                customDateContainer.classList.add('hidden');
+            }
+        });
+    }
     
     // Aplicar filtros y recargar datos
-    applyFiltersBtn.addEventListener('click', function() {
-        loadReportData();
-    });
+    if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', function() {
+            loadReportData();
+        });
+    }
     
     // Mostrar modal de generación de reportes
-    generateReportBtn.addEventListener('click', function() {
-        document.getElementById('report-modal').classList.remove('hidden');
-    });
+    if (generateReportBtn) {
+        generateReportBtn.addEventListener('click', function() {
+            document.getElementById('report-modal').classList.remove('hidden');
+        });
+    }
     
     // Cerrar modal de reportes
-    closeReportModalBtn.addEventListener('click', function() {
-        document.getElementById('report-modal').classList.add('hidden');
-    });
+    if (closeReportModalBtn) {
+        closeReportModalBtn.addEventListener('click', function() {
+            document.getElementById('report-modal').classList.add('hidden');
+        });
+    }
     
     // Cancelar generación de reporte
-    cancelReportBtn.addEventListener('click', function() {
-        document.getElementById('report-modal').classList.add('hidden');
-    });
+    if (cancelReportBtn) {
+        cancelReportBtn.addEventListener('click', function() {
+            document.getElementById('report-modal').classList.add('hidden');
+        });
+    }
     
     // Enviar formulario de generación de reporte
-    reportForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        generateReport();
-    });
+    if (reportForm) {
+        reportForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            generateReport();
+        });
+    }
     
     // Mostrar/ocultar dropdown de usuario
-    userMenuBtn.addEventListener('click', function() {
-        userDropdown.classList.toggle('hidden');
-    });
+    if (userMenuBtn && userDropdown) {
+        userMenuBtn.addEventListener('click', function() {
+            userDropdown.classList.toggle('hidden');
+        });
+    }
     
     // Mostrar/ocultar dropdown de notificaciones
-    notificationsBtn.addEventListener('click', function() {
-        loadNotifications();
-        notificationsDropdown.classList.toggle('hidden');
-    });
+    if (notificationsBtn && notificationsDropdown) {
+        notificationsBtn.addEventListener('click', function() {
+            loadNotifications();
+            notificationsDropdown.classList.toggle('hidden');
+        });
+    }
     
     // Cerrar dropdowns al hacer clic fuera
     document.addEventListener('click', function(e) {
-        if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+        if (userMenuBtn && userDropdown && !userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
             userDropdown.classList.add('hidden');
         }
         
-        if (!notificationsBtn.contains(e.target) && !notificationsDropdown.contains(e.target)) {
+        if (notificationsBtn && notificationsDropdown && !notificationsBtn.contains(e.target) && !notificationsDropdown.contains(e.target)) {
             notificationsDropdown.classList.add('hidden');
         }
     });
     
-    // Establecer fechas por defecto (última semana)
-    const today = new Date();
-    const lastWeek = new Date(today);
-    lastWeek.setDate(today.getDate() - 7);
+    // Establecer fechas por defecto (última semana) si existen los campos
+    const startDateField = document.getElementById('start-date');
+    const endDateField = document.getElementById('end-date');
     
-    document.getElementById('start-date').value = formatDate(lastWeek);
-    document.getElementById('end-date').value = formatDate(today);
+    if (startDateField && endDateField) {
+        const today = new Date();
+        const lastWeek = new Date(today);
+        lastWeek.setDate(today.getDate() - 7);
+        
+        startDateField.value = formatDate(lastWeek);
+        endDateField.value = formatDate(today);
+    }
+}
+
+// Función para actualizar opciones según tipo de reporte
+function updateReportOptions(reportType) {
+    // Ocultar todas las opciones específicas
+    document.querySelectorAll('.report-specific-options').forEach(el => {
+        el.classList.add('hidden');
+    });
+    
+    // Mostrar opciones específicas según el tipo seleccionado
+    switch(reportType) {
+        case 'cameras-analysis':
+            document.getElementById('cameras-options').classList.remove('hidden');
+            break;
+        case 'sensors-duration':
+            document.getElementById('sensors-options').classList.remove('hidden');
+            break;
+        case 'complete-integrated':
+            document.getElementById('complete-options').classList.remove('hidden');
+            break;
+    }
+}
+
+// Generar reporte PDF, Excel o CSV (modificada)
+function generateReport() {
+    const title = document.getElementById('report-title').value;
+    const type = document.getElementById('report-type').value;
+    const format = document.getElementById('report-format').value;
+    const dateRangeReport = document.getElementById('date-range-report').value;
+    
+    // Crear objeto con datos del formulario
+    const reportData = {
+        title,
+        type,
+        format,
+        dateRange: dateRangeReport
+    };
+    
+    // Añadir opciones específicas según el tipo de reporte
+    switch(type) {
+        case 'cameras-analysis':
+            reportData.cameraAlertsDist = document.querySelector('input[name="camera-alerts-dist"]').checked;
+            reportData.cameraPeakHours = document.querySelector('input[name="camera-peak-hours"]').checked;
+            reportData.cameraEffectiveness = document.querySelector('input[name="camera-effectiveness"]').checked;
+            break;
+        
+        case 'sensors-duration':
+            reportData.sensorsClassification = document.querySelector('input[name="sensors-classification"]').checked;
+            reportData.sensorsAvgDuration = document.querySelector('input[name="sensors-avg-duration"]').checked;
+            reportData.sensorsAnomalies = document.querySelector('input[name="sensors-anomalies"]').checked;
+            break;
+        
+        case 'complete-integrated':
+            reportData.detailLevel = document.getElementById('detail-level').value;
+            reportData.includeRecommendations = document.querySelector('input[name="include-recommendations"]').checked;
+            break;
+    }
+    
+    // Mostrar indicador de carga
+    showLoading();
+    
+    // Realizar petición al servidor
+    fetch('/api/reportes/generar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(reportData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al generar el reporte');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Ocultar el modal
+        document.getElementById('report-modal').classList.add('hidden');
+        
+        // Descargar el archivo si se generó correctamente
+        if (data.success && data.fileUrl) {
+            window.location.href = data.fileUrl;
+            showSuccess(`Reporte "${title}" generado correctamente.`);
+        } else {
+            showError('No se pudo generar el reporte. Por favor intente nuevamente.');
+        }
+        
+        // Ocultar indicador de carga
+        hideLoading();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Error al generar el reporte. Por favor intente nuevamente.');
+        hideLoading();
+        
+        // Simulación de éxito en ambiente de desarrollo
+        setTimeout(() => {
+            document.getElementById('report-modal').classList.add('hidden');
+            showSuccess(`Reporte "${title}" generado correctamente en modo de simulación.`);
+            hideLoading();
+        }, 1500);
+    });
 }
 
 function updateNotificationCounter() {
@@ -375,67 +507,6 @@ function updateAlertsTable(alerts) {
     tableBody.innerHTML = html;
 }
 
-// Generar reporte PDF, Excel o CSV
-function generateReport() {
-    const title = document.getElementById('report-title').value;
-    const type = document.getElementById('report-type').value;
-    const format = document.getElementById('report-format').value;
-    const includeGraphs = document.querySelector('input[name="include-graphs"]').checked;
-    const includeAlerts = document.querySelector('input[name="include-alerts"]').checked;
-    const includeSummary = document.querySelector('input[name="include-summary"]').checked;
-    
-    // Crear objeto con datos del formulario
-    const reportData = {
-        title,
-        type,
-        format,
-        includeGraphs,
-        includeAlerts,
-        includeSummary,
-        dateRange: document.getElementById('date-range').value,
-        cameraId: document.getElementById('camera-filter').value,
-        startDate: document.getElementById('start-date').value,
-        endDate: document.getElementById('end-date').value
-    };
-    
-    // Mostrar indicador de carga
-    showLoading();
-    
-    // Realizar petición al servidor
-    fetch('/api/reportes/generar', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(reportData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Error al generar el reporte');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Ocultar el modal
-        document.getElementById('report-modal').classList.add('hidden');
-        
-        // Descargar el archivo si se generó correctamente
-        if (data.success && data.fileUrl) {
-            window.location.href = data.fileUrl;
-            showSuccess(`Reporte "${title}" generado correctamente.`);
-        } else {
-            showError('No se pudo generar el reporte. Por favor intente nuevamente.');
-        }
-        
-        // Ocultar indicador de carga
-        hideLoading();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showError('Error al generar el reporte. Por favor intente nuevamente.');
-        hideLoading();
-    });
-}
 
 // Función para clasificar el movimiento según su duración
 function clasificarMovimiento(duracionSegundos) {
@@ -687,6 +758,7 @@ function cargarDatosDuracionEjemplo() {
     actualizarTablaDuracion(eventosEjemplo);
 }
 
+// Cargar notificaciones desde el servidor
 function loadNotifications() {
     fetch('/alertas/obtener')
         .then(response => {

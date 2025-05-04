@@ -313,77 +313,125 @@
     <!-- Notificaciones dropdown container (creado dinámicamente) -->
     <div id="notifications-dropdown" class="hidden fixed z-20 mt-2 w-80 bg-white rounded-md shadow-lg py-1 right-4 top-16"></div>
 
-    <!-- Modal para Generación de Reportes -->
-    <div id="report-modal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-gray-900 opacity-50"></div>
-        <div class="absolute inset-0 flex items-center justify-center">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
-                <!-- Header del modal -->
-                <div class="bg-gray-900 text-white px-4 py-3 flex justify-between items-center">
-                    <h3 class="text-lg font-semibold">Generar Reporte</h3>
-                    <button id="close-report-modal" class="text-white hover:text-gray-300 focus:outline-none">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <!-- Contenido del modal -->
-                <div class="p-4">
-                    <form id="report-form">
-                        <div class="mb-4">
-                            <label for="report-title" class="block text-gray-700 font-medium mb-2">Título del Reporte</label>
-                            <input type="text" id="report-title" name="report-title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ingrese un título para el reporte" required>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="report-type" class="block text-gray-700 font-medium mb-2">Tipo de Reporte</label>
-                            <select id="report-type" name="report-type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                <option value="alerts-summary">Resumen de Alertas</option>
-                                <option value="camera-activity">Actividad por Cámara</option>
-                                <option value="complete">Reporte Completo</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="report-format" class="block text-gray-700 font-medium mb-2">Formato</label>
-                            <select id="report-format" name="report-format" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                <option value="pdf">PDF</option>
-                                <option value="excel">Excel</option>
-                                <option value="csv">CSV</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-gray-700 font-medium mb-2">Incluir</label>
-                            <div class="flex flex-col gap-2">
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="include-graphs" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" checked>
-                                    <span class="ml-2">Gráficas</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="include-alerts" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" checked>
-                                    <span class="ml-2">Lista de alertas</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="include-summary" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" checked>
-                                    <span class="ml-2">Resumen estadístico</span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <!-- Botones de acción -->
-                        <div class="mt-6 flex justify-end">
-                            <button type="button" id="cancel-report" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 mr-2">
-                                Cancelar
-                            </button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                                Generar Reporte
-                            </button>
-                        </div>
-                    </form>
-                </div>
+<!-- Modal para Generación de Reportes -->
+<div id="report-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-gray-900 opacity-50"></div>
+    <div class="absolute inset-0 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <!-- Header del modal -->
+            <div class="bg-gray-900 text-white px-4 py-3 flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Generar Reporte</h3>
+                <button id="close-report-modal" class="text-white hover:text-gray-300 focus:outline-none">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Contenido del modal -->
+            <div class="p-4">
+                <form id="report-form">
+                    <div class="mb-4">
+                        <label for="report-title" class="block text-gray-700 font-medium mb-2">Título del Reporte</label>
+                        <input type="text" id="report-title" name="report-title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ingrese un título para el reporte" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="report-type" class="block text-gray-700 font-medium mb-2">Tipo de Reporte</label>
+                        <select id="report-type" name="report-type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <option value="cameras-analysis">Análisis de Cámaras</option>
+                            <option value="sensors-duration">Análisis de Sensores y Duración</option>
+                            <option value="complete-integrated">Reporte Completo Integrado</option>
+                        </select>
+                    </div>
+                    
+<!-- Opciones específicas para Análisis de Cámaras -->
+<div id="cameras-options" class="mb-4 report-specific-options" style="display: none;">
+    <label class="block text-gray-700 font-medium mb-2">Métricas de cámaras a incluir</label>
+    <div class="flex flex-col gap-2">
+        <label class="inline-flex items-center">
+            <input type="checkbox" name="camera-alerts-dist" class="rounded border-gray-300 text-blue-600" checked>
+            <span class="ml-2">Distribución de alertas</span>
+        </label>
+        <label class="inline-flex items-center">
+            <input type="checkbox" name="camera-peak-hours" class="rounded border-gray-300 text-blue-600" checked>
+            <span class="ml-2">Horarios de mayor actividad</span>
+        </label>
+        <label class="inline-flex items-center">
+            <input type="checkbox" name="camera-effectiveness" class="rounded border-gray-300 text-blue-600" checked>
+            <span class="ml-2">Efectividad de detección</span>
+        </label>
+    </div>
+</div>
+
+<!-- Opciones específicas para Análisis de Sensores y Duración -->
+<div id="sensors-options" class="mb-4 report-specific-options hidden" style="display: none;">
+    <label class="block text-gray-700 font-medium mb-2">Métricas de duración a incluir</label>
+    <div class="flex flex-col gap-2">
+        <label class="inline-flex items-center">
+            <input type="checkbox" name="sensors-classification" class="rounded border-gray-300 text-blue-600" checked>
+            <span class="ml-2">Clasificación por duración</span>
+        </label>
+        <label class="inline-flex items-center">
+            <input type="checkbox" name="sensors-avg-duration" class="rounded border-gray-300 text-blue-600" checked>
+            <span class="ml-2">Duración promedio por ubicación</span>
+        </label>
+        <label class="inline-flex items-center">
+            <input type="checkbox" name="sensors-anomalies" class="rounded border-gray-300 text-blue-600" checked>
+            <span class="ml-2">Análisis de anomalías</span>
+        </label>
+    </div>
+</div>
+
+<!-- Opciones específicas para Reporte Completo -->
+<div id="complete-options" class="mb-4 report-specific-options hidden" style="display: none;">
+    <label class="block text-gray-700 font-medium mb-2">Nivel de detalle</label>
+    <select id="detail-level" name="detail-level" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="executive">Resumen ejecutivo</option>
+        <option value="standard" selected>Estándar</option>
+        <option value="detailed">Detallado</option>
+    </select>
+
+    <div class="mt-3">
+        <label class="inline-flex items-center">
+            <input type="checkbox" name="include-recommendations" class="rounded border-gray-300 text-blue-600" checked>
+            <span class="ml-2">Incluir recomendaciones</span>
+        </label>
+    </div>
+</div>
+
+                    
+                    <div class="mb-4">
+                        <label for="report-format" class="block text-gray-700 font-medium mb-2">Formato</label>
+                        <select id="report-format" name="report-format" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <option value="pdf">PDF</option>
+                            <option value="excel">Excel</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="date-range-report" class="block text-gray-700 font-medium mb-2">Periodo</label>
+                        <select id="date-range-report" name="date-range-report" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="day">Último día</option>
+                            <option value="week" selected>Última semana</option>
+                            <option value="month">Último mes</option>
+                        </select>
+                    </div>
+
+                    
+                    <!-- Botones de acción -->
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" id="cancel-report" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 mr-2">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            Generar Reporte
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
 <!-- Reemplazar el contenedor de mensajes flash actual -->
 <div id="flash-messages" class="fixed top-4 right-4 z-50">
