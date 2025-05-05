@@ -2025,9 +2025,9 @@ def generate_pdf_report(title, user_info, stats, charts_data, alerts_data, repor
             elements.append(Paragraph(recommendations_text, normal_style))
         
     
-    # Reporte tipo Actividad por Cámara
-    elif report_type == "camera-activity":
-        # Para actividad por cámara, enfocamos en distribución y tendencias
+        # Reporte tipo Actividad por Cámara
+    elif report_type == "cameras-analysis":
+        elements.append(PageBreak())
         elements.append(Paragraph("Análisis de Actividad por Cámara", title_style))
         elements.append(Spacer(1, 0.2*inch))
         elements.append(Paragraph(
@@ -2189,8 +2189,8 @@ def generate_pdf_report(title, user_info, stats, charts_data, alerts_data, repor
             elements.append(img)
             plt.close('all')
     
-    # Reporte Completo
-    else:  # report_type == "complete"
+        # Reporte Completo
+    elif report_type == "complete-integrated": 
     # Incluimos información completa integrando tanto el reporte de cámaras como el de sensores y duración
     
     # Título principal y descripción del reporte completo
@@ -2198,157 +2198,122 @@ def generate_pdf_report(title, user_info, stats, charts_data, alerts_data, repor
         elements.append(Paragraph("REPORTE DE SEGURIDAD COMPLETO", title_style))
         elements.append(Spacer(1, 0.2*inch))
     
-    # Texto introductorio explicando el reporte completo
-    intro_text = """
-    <para>Este reporte integral combina el análisis de actividad por cámara y la evaluación de duración de eventos, 
-    proporcionando una visión completa del sistema de seguridad. Se incluyen métricas clave, tendencias 
-    de actividad, análisis de duración de eventos y recomendaciones específicas para optimizar el rendimiento 
-    del sistema y reforzar la seguridad.</para>
-    """
-    elements.append(Paragraph(intro_text, normal_style))
-    elements.append(Spacer(1, 0.3*inch))
-    
-    # 1. SECCIÓN DE RESUMEN ESTADÍSTICO CONSOLIDADO
-    # Creamos un panel visualmente atractivo con estadísticas clave combinadas
-    elements.append(Paragraph("1. Resumen Estadístico Consolidado", section_style))
-    
-    if stats:
-        # Creamos tabla para métricas principales con diseño moderno
-        metrics_data = [
-            ["Métrica", "Valor", "Indicador Visual"],
-            ["Total de Alertas", f"{stats['total_alerts']}", "■" * min(20, int(stats['total_alerts']/10 + 1))],
-            ["Alertas Recientes (24h)", f"{stats['recent_alerts']}", "■" * min(20, int(stats['recent_alerts']/3 + 1))],
-            ["Alertas Pendientes", f"{stats['total_alerts'] - stats['reviewed_alerts']}", "■" * min(20, int((stats['total_alerts'] - stats['reviewed_alerts'])/5 + 1))],
-            ["Alertas Críticas (>60s)", f"{stats['duracion_categorias']['critico']}", "■" * min(20, int(stats['duracion_categorias']['critico']*2 + 1))],
-        ]
-        
-        # Calculamos porcentaje de revisión para el indicador de estado
-        if stats['total_alerts'] > 0:
-            review_percentage = (stats['reviewed_alerts'] / stats['total_alerts']) * 100
-            review_status = f"{review_percentage:.1f}% Revisadas"
-        else:
-            review_status = "No hay alertas"
-        
-        metrics_table = Table(metrics_data, colWidths=[2.5*inch, 1.5*inch, 3*inch])
-        metrics_style = [
-            # Cabecera
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-            ('ALIGN', (1, 0), (1, -1), 'CENTER'),
-            ('ALIGN', (2, 0), (2, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('TOPPADDING', (0, 0), (-1, 0), 12),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
-            ('TOPPADDING', (0, 1), (-1, -1), 8),
-        ]
-        
-        # Colorear las filas para mejor visualización
-        for i in range(1, len(metrics_data)):
-            if i % 2 == 0:
-                metrics_style.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor('#F7FAFC')))
-                
-            # Destacar las alertas críticas con color
-            if i == 4:  # Fila de alertas críticas
-                metrics_style.append(('TEXTCOLOR', (1, i), (1, i), colors.HexColor('#E53E3E')))
-                metrics_style.append(('FONTNAME', (1, i), (1, i), 'Helvetica-Bold'))
-                metrics_style.append(('BACKGROUND', (2, i), (2, i), colors.HexColor('#FFF5F5')))
-        
-        metrics_table.setStyle(TableStyle(metrics_style))
-        elements.append(metrics_table)
-        
-        # Añadir un resumen textual con indicadores de salud del sistema
-        elements.append(Spacer(1, 0.2*inch))
-        
-        # Determinar el estado del sistema basado en métricas
-        system_status = "NORMAL"
-        status_color = "#38A169"  # Verde por defecto
-        
-        if stats['duracion_categorias']['critico'] > 5 or (stats['total_alerts'] > 0 and (stats['total_alerts'] - stats['reviewed_alerts'])/stats['total_alerts'] > 0.3):
-            system_status = "REQUIERE ATENCIÓN"
-            status_color = "#E53E3E"  # Rojo
-        elif stats['duracion_categorias']['alto'] > 10 or (stats['total_alerts'] > 0 and (stats['total_alerts'] - stats['reviewed_alerts'])/stats['total_alerts'] > 0.2):
-            system_status = "PRECAUCIÓN"
-            status_color = "#DD6B20"  # Naranja
-        
-        # Panel de estado del sistema
-        status_table = Table([["Estado del Sistema:", system_status]], 
-                             colWidths=[2*inch, 5*inch])
-        status_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, 0), 'RIGHT'),
-            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
-            ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (1, 0), 12),
-            ('TEXTCOLOR', (1, 0), (1, 0), colors.HexColor(status_color)),
-            ('FONTSIZE', (1, 0), (1, 0), 14),
-            ('BOTTOMPADDING', (0, 0), (1, 0), 10),
-            ('TOPPADDING', (0, 0), (1, 0), 10),
-        ]))
-        elements.append(status_table)
+        # Texto introductorio explicando el reporte completo
+        intro_text = """
+        <para>Este reporte integral combina el análisis de actividad por cámara y la evaluación de duración de eventos, 
+        proporcionando una visión completa del sistema de seguridad. Se incluyen métricas clave, tendencias 
+        de actividad, análisis de duración de eventos y recomendaciones específicas para optimizar el rendimiento 
+        del sistema y reforzar la seguridad.</para>
+        """
+        elements.append(Paragraph(intro_text, normal_style))
         elements.append(Spacer(1, 0.3*inch))
-    
-    # 2. ANÁLISIS DE DISTRIBUCIÓN DE ACTIVIDAD
-    elements.append(Paragraph("2. Análisis de Distribución de Actividad", section_style))
-    
-    # 2.1 Distribución por día y hora
-    if charts_data and ('by_day' in charts_data or 'by_hour' in charts_data):
-        # Crear gráficos en la misma fila si es posible
-        day_hour_data = []
         
-        # Si tenemos datos por día
-        if 'by_day' in charts_data:
-            plt.figure(figsize=(5, 3.5))
-            bars = plt.bar(charts_data['by_day']['labels'], charts_data['by_day']['data'], 
-                       color=plt.cm.Blues(np.linspace(0.6, 0.9, len(charts_data['by_day']['labels']))))
+        # 1. SECCIÓN DE RESUMEN ESTADÍSTICO CONSOLIDADO
+        # Creamos un panel visualmente atractivo con estadísticas clave combinadas
+        elements.append(Paragraph("1. Resumen Estadístico Consolidado", section_style))
+        
+        if stats:
+            # Creamos tabla para métricas principales con diseño moderno
+            metrics_data = [
+                ["Métrica", "Valor", "Indicador Visual"],
+                ["Total de Alertas", f"{stats['total_alerts']}", "■" * min(20, int(stats['total_alerts']/10 + 1))],
+                ["Alertas Recientes (24h)", f"{stats['recent_alerts']}", "■" * min(20, int(stats['recent_alerts']/3 + 1))],
+                ["Alertas Pendientes", f"{stats['total_alerts'] - stats['reviewed_alerts']}", "■" * min(20, int((stats['total_alerts'] - stats['reviewed_alerts'])/5 + 1))],
+                ["Alertas Críticas (>60s)", f"{stats['duracion_categorias']['critico']}", "■" * min(20, int(stats['duracion_categorias']['critico']*2 + 1))],
+            ]
             
-            # Añadir etiquetas sobre las barras
-            for bar in bars:
-                height = bar.get_height()
-                plt.text(bar.get_x() + bar.get_width()/2., height + 0.5,
-                       '%d' % int(height), ha='center', va='bottom', fontweight='bold')
+            # Calculamos porcentaje de revisión para el indicador de estado
+            if stats['total_alerts'] > 0:
+                review_percentage = (stats['reviewed_alerts'] / stats['total_alerts']) * 100
+                review_status = f"{review_percentage:.1f}% Revisadas"
+            else:
+                review_status = "No hay alertas"
             
-            plt.title('Distribución por Día de la Semana', fontsize=12, fontweight='bold')
-            plt.grid(axis='y', alpha=0.3, linestyle='--')
-            plt.ylabel('Número de Alertas', fontsize=10)
-            plt.ylim(0, max(charts_data['by_day']['data']) * 1.2)
+            metrics_table = Table(metrics_data, colWidths=[2.5*inch, 1.5*inch, 3*inch])
+            metrics_style = [
+                # Cabecera
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+                ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('TOPPADDING', (0, 0), (-1, 0), 12),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+                ('TOPPADDING', (0, 1), (-1, -1), 8),
+            ]
             
-            ax = plt.gca()
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.set_facecolor('#F8FAFC')
+            # Colorear las filas para mejor visualización
+            for i in range(1, len(metrics_data)):
+                if i % 2 == 0:
+                    metrics_style.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor('#F7FAFC')))
+                    
+                # Destacar las alertas críticas con color
+                if i == 4:  # Fila de alertas críticas
+                    metrics_style.append(('TEXTCOLOR', (1, i), (1, i), colors.HexColor('#E53E3E')))
+                    metrics_style.append(('FONTNAME', (1, i), (1, i), 'Helvetica-Bold'))
+                    metrics_style.append(('BACKGROUND', (2, i), (2, i), colors.HexColor('#FFF5F5')))
             
-            plt.tight_layout()
+            metrics_table.setStyle(TableStyle(metrics_style))
+            elements.append(metrics_table)
             
-            day_buffer = io.BytesIO()
-            plt.savefig(day_buffer, format='png', dpi=150, bbox_inches='tight')
-            day_buffer.seek(0)
-            day_img = Image(day_buffer)
-            day_img.drawHeight = 2.8*inch
-            day_img.drawWidth = 3.5*inch
-            plt.close('all')
+            # Añadir un resumen textual con indicadores de salud del sistema
+            elements.append(Spacer(1, 0.2*inch))
             
-            if 'by_hour' in charts_data:
-                # Si tenemos también datos por hora, usaremos una tabla para organizar los gráficos
+            # Determinar el estado del sistema basado en métricas
+            system_status = "NORMAL"
+            status_color = "#38A169"  # Verde por defecto
+            
+            if stats['duracion_categorias']['critico'] > 5 or (stats['total_alerts'] > 0 and (stats['total_alerts'] - stats['reviewed_alerts'])/stats['total_alerts'] > 0.3):
+                system_status = "REQUIERE ATENCIÓN"
+                status_color = "#E53E3E"  # Rojo
+            elif stats['duracion_categorias']['alto'] > 10 or (stats['total_alerts'] > 0 and (stats['total_alerts'] - stats['reviewed_alerts'])/stats['total_alerts'] > 0.2):
+                system_status = "PRECAUCIÓN"
+                status_color = "#DD6B20"  # Naranja
+            
+            # Panel de estado del sistema
+            status_table = Table([["Estado del Sistema:", system_status]], 
+                                colWidths=[2*inch, 5*inch])
+            status_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, 0), 'RIGHT'),
+                ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+                ('FONTNAME', (0, 0), (1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (1, 0), 12),
+                ('TEXTCOLOR', (1, 0), (1, 0), colors.HexColor(status_color)),
+                ('FONTSIZE', (1, 0), (1, 0), 14),
+                ('BOTTOMPADDING', (0, 0), (1, 0), 10),
+                ('TOPPADDING', (0, 0), (1, 0), 10),
+            ]))
+            elements.append(status_table)
+            elements.append(Spacer(1, 0.3*inch))
+        
+        # 2. ANÁLISIS DE DISTRIBUCIÓN DE ACTIVIDAD
+        elements.append(Paragraph("2. Análisis de Distribución de Actividad", section_style))
+        
+        # 2.1 Distribución por día y hora
+        if charts_data and ('by_day' in charts_data or 'by_hour' in charts_data):
+            # Crear gráficos en la misma fila si es posible
+            day_hour_data = []
+            
+            # Si tenemos datos por día
+            if 'by_day' in charts_data:
                 plt.figure(figsize=(5, 3.5))
+                bars = plt.bar(charts_data['by_day']['labels'], charts_data['by_day']['data'], 
+                        color=plt.cm.Blues(np.linspace(0.6, 0.9, len(charts_data['by_day']['labels']))))
                 
-                # Crear gráfico por hora con estilo coherente
-                plt.plot(charts_data['by_hour']['labels'], charts_data['by_hour']['data'], 
-                       marker='o', color='#2B6CB0', linewidth=2)
+                # Añadir etiquetas sobre las barras
+                for bar in bars:
+                    height = bar.get_height()
+                    plt.text(bar.get_x() + bar.get_width()/2., height + 0.5,
+                        '%d' % int(height), ha='center', va='bottom', fontweight='bold')
                 
-                # Añadir área bajo la curva
-                plt.fill_between(charts_data['by_hour']['labels'], charts_data['by_hour']['data'], 
-                               alpha=0.2, color='#2B6CB0')
-                
-                plt.title('Distribución por Hora del Día', fontsize=12, fontweight='bold')
-                plt.grid(True, alpha=0.3, linestyle='--')
+                plt.title('Distribución por Día de la Semana', fontsize=12, fontweight='bold')
+                plt.grid(axis='y', alpha=0.3, linestyle='--')
                 plt.ylabel('Número de Alertas', fontsize=10)
-                plt.xlabel('Hora', fontsize=10)
-                
-                # Mostrar solo algunas horas para evitar sobrecarga visual
-                plt.xticks([0, 6, 12, 18, 23])
+                plt.ylim(0, max(charts_data['by_day']['data']) * 1.2)
                 
                 ax = plt.gca()
                 ax.spines['top'].set_visible(False)
@@ -2357,375 +2322,242 @@ def generate_pdf_report(title, user_info, stats, charts_data, alerts_data, repor
                 
                 plt.tight_layout()
                 
-                hour_buffer = io.BytesIO()
-                plt.savefig(hour_buffer, format='png', dpi=150, bbox_inches='tight')
-                hour_buffer.seek(0)
-                hour_img = Image(hour_buffer)
-                hour_img.drawHeight = 2.8*inch
-                hour_img.drawWidth = 3.5*inch
+                day_buffer = io.BytesIO()
+                plt.savefig(day_buffer, format='png', dpi=150, bbox_inches='tight')
+                day_buffer.seek(0)
+                day_img = Image(day_buffer)
+                day_img.drawHeight = 2.8*inch
+                day_img.drawWidth = 3.5*inch
                 plt.close('all')
                 
-                # Crear tabla para organizar los gráficos en dos columnas
-                graphics_table_data = [[day_img, hour_img]]
-                graphics_table = Table(graphics_table_data, colWidths=[3.5*inch, 3.5*inch])
-                graphics_table.setStyle(TableStyle([
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ]))
-                elements.append(graphics_table)
-            else:
-                # Si solo tenemos datos por día
-                elements.append(day_img)
-        
-        # Espacio después de los gráficos
-        elements.append(Spacer(1, 0.3*inch))
-    
-    # 2.2 Distribución por Cámara
-    if charts_data and 'by_camera' in charts_data and len(charts_data['by_camera']['labels']) > 0:
-        elements.append(Paragraph("Distribución de Alertas por Cámara", subtitle_style))
-        
-        # Crear gráfico de pastel mejorado
-        plt.figure(figsize=(6, 4.5))
-        
-        # Colores más atractivos
-        color_palette = plt.cm.viridis(np.linspace(0, 1, len(charts_data['by_camera']['labels'])))
-        
-        # Si hay muchas cámaras, limitamos para mejor visualización
-        max_cameras = 8
-        if len(charts_data['by_camera']['labels']) > max_cameras:
-            # Tomar las cámaras con más alertas
-            top_cameras = sorted(zip(charts_data['by_camera']['labels'], 
-                                    charts_data['by_camera']['data']),
-                                key=lambda x: x[1], reverse=True)
-            
-            # Separar top cámaras y agrupar el resto
-            top_labels = [x[0] for x in top_cameras[:max_cameras-1]]
-            top_data = [x[1] for x in top_cameras[:max_cameras-1]]
-            
-            # Crear categoría "Otras"
-            other_data = sum([x[1] for x in top_cameras[max_cameras-1:]])
-            
-            # Juntar datos
-            labels = top_labels + ["Otras"]
-            data = top_data + [other_data]
-            
-            wedges, texts, autotexts = plt.pie(data, 
-                                             labels=None,
-                                             autopct='%1.1f%%',
-                                             startangle=90,
-                                             colors=color_palette[:max_cameras],
-                                             shadow=True)
-        else:
-            wedges, texts, autotexts = plt.pie(charts_data['by_camera']['data'], 
-                                             labels=None,
-                                             autopct='%1.1f%%',
-                                             startangle=90,
-                                             colors=color_palette,
-                                             shadow=True)
-            labels = charts_data['by_camera']['labels']
-            data = charts_data['by_camera']['data']
-        
-        # Personalizar look & feel
-        plt.title('Distribución de Alertas por Cámara', fontsize=14, pad=20, fontweight='bold')
-        plt.axis('equal')
-        
-        # Leyenda en una posición mejor
-        plt.legend(wedges, labels, title="Cámaras", 
-                  loc="center left", 
-                  bbox_to_anchor=(1, 0.5),
-                  fontsize=9)
-        
-        # Personalizar porcentajes
-        for autotext in autotexts:
-            autotext.set_fontsize(9)
-            autotext.set_weight('bold')
-            autotext.set_color('white')
-        
-        plt.tight_layout()
-        
-        # Guardar la gráfica
-        img_buffer = io.BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150)
-        img_buffer.seek(0)
-        
-        # Crear imagen para el PDF
-        img = Image(img_buffer)
-        img.drawHeight = 4*inch
-        img.drawWidth = 7*inch
-        elements.append(img)
-        plt.close('all')
-        
-        elements.append(Spacer(1, 0.3*inch))
-        
-        # Tabla resumen por cámara
-        elements.append(Paragraph("Resumen de Actividad por Cámara", subtitle_style))
-        
-        camera_data = []
-        
-        # Cabecera
-        camera_data.append(["Posición de Cámara", "Total Alertas", "% del Total", "Tendencia"])
-        
-        # Calcular total
-        total = sum(charts_data['by_camera']['data'])
-        
-        # Simulamos datos de tendencia (en un sistema real vendríamos de la base de datos)
-        trends = ["↑", "↓", "→", "↑", "↓", "→", "↑", "↓", "→", "↑", "↓", "→"]  # Tendencias de ejemplo
-        
-        # Datos
-        for i, cam in enumerate(charts_data['by_camera']['labels']):
-            count = charts_data['by_camera']['data'][i]
-            percentage = (count/total*100) if total > 0 else 0
-            
-            # Asignar tendencia (en un sistema real esto vendría de comparar con períodos anteriores)
-            trend = trends[i % len(trends)]
-            trend_color = "#38A169" if trend == "↑" else "#E53E3E" if trend == "↓" else "#718096"
-            
-            camera_data.append([
-                cam,
-                str(count),
-                f"{percentage:.1f}%",
-                trend
-            ])
-        
-        # Crear tabla
-        camera_table = Table(camera_data, colWidths=[3*inch, 1.3*inch, 1.3*inch, 1.4*inch], repeatRows=1)
-        
-        # Estilo
-        cam_style = [
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-            ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('TOPPADDING', (0, 0), (-1, 0), 12),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ]
-        
-        # Colorear filas alternadas y añadir colores a las tendencias
-        for i in range(1, len(camera_data)):
-            if i % 2 == 0:
-                cam_style.append(('BACKGROUND', (0, i), (-2, i), colors.HexColor('#F7FAFC')))
-            
-            # Color de tendencia
-            trend = camera_data[i][3]
-            trend_color = "#38A169" if trend == "↑" else "#E53E3E" if trend == "↓" else "#718096"
-            cam_style.append(('TEXTCOLOR', (3, i), (3, i), colors.HexColor(trend_color)))
-            cam_style.append(('FONTNAME', (3, i), (3, i), 'Helvetica-Bold'))
-            cam_style.append(('FONTSIZE', (3, i), (3, i), 14))
-        
-        camera_table.setStyle(TableStyle(cam_style))
-        elements.append(camera_table)
-        
-        elements.append(Spacer(1, 0.5*inch))
-    
-    # 3. ANÁLISIS DE DURACIÓN DE EVENTOS
-    elements.append(Paragraph("3. Análisis de Duración de Eventos", section_style))
-    
-    if stats and 'duracion_categorias' in stats:
-        # Texto explicativo mejorado con iconos visuales
-        duration_explanation = """
-        <para>El análisis de duración clasifica los eventos en categorías según el tiempo que permanecen activos:
-        <br/><b>• <font color="#66BB6A">Bajo:</font></b> Menos de 5 segundos - Eventos breves, generalmente falsos positivos.
-        <br/><b>• <font color="#FFC107">Moderado:</font></b> Entre 5 y 20 segundos - Duración normal para tránsito regular.
-        <br/><b>• <font color="#FF9800">Alto:</font></b> Entre 20 y 60 segundos - Actividad prolongada que merece revisión.
-        <br/><b>• <font color="#F44336">Crítico:</font></b> Más de 60 segundos - Posible situación de riesgo que requiere atención inmediata.
-        </para>
-        """
-        elements.append(Paragraph(duration_explanation, normal_style))
-        elements.append(Spacer(1, 0.2*inch))
-        
-        # Gráfico de distribución por categorías de duración MEJORADO
-        plt.figure(figsize=(7, 4.5))
-        categories = ['Bajo (<5s)', 'Moderado (5-20s)', 'Alto (20-60s)', 'Crítico (>60s)']
-        values = [
-            stats['duracion_categorias']['bajo'],
-            stats['duracion_categorias']['moderado'],
-            stats['duracion_categorias']['alto'],
-            stats['duracion_categorias']['critico']
-        ]
-        
-        # Colores para indicar severidad con un toque más vibrante pero profesional
-        bar_colors = ['#66BB6A', '#FFC107', '#FF9800', '#F44336']
-        
-        # Crear gráfico de barras con estilo mejorado
-        ax = plt.subplot(111)
-        bars = plt.bar(categories, values, color=bar_colors, width=0.65)
-        
-        # Añadir valores sobre las barras
-        for bar in bars:
-            height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2., height + 0.8,
-                   f'{int(height)}', ha='center', va='bottom', fontweight='bold', fontsize=12)
-        
-        # Mejorar diseño del gráfico
-        plt.title('Distribución de Eventos por Duración', fontsize=16, pad=20, fontweight='bold')
-        plt.ylabel('Número de eventos', fontsize=12)
-        plt.grid(axis='y', linestyle='--', alpha=0.3)
-        
-        # Eliminar bordes innecesarios
-        for spine in ax.spines.values():
-            spine.set_visible(False)
-        
-        # Añadir colores de fondo para mejor visualización
-        ax.set_facecolor('#F7FAFC')  # Fondo gris muy claro
-        plt.gcf().set_facecolor('#FFFFFF')
-        
-        # Ajustar ticks del eje Y para mejor legibilidad
-        plt.yticks(fontsize=8)
-        plt.xticks(fontsize=9, fontweight='bold')
-        
-        # Añadir valor total como anotación
-        total = sum(values)
-        plt.annotate(f'Total: {total} eventos', 
-                   xy=(0.5, 0.97),
-                   xycoords='axes fraction',
-                   fontsize=12,
-                   fontweight='bold',
-                   ha='center',
-                   va='top',
-                   bbox=dict(boxstyle="round,pad=0.3", fc="#EBF8FF", ec="#4299E1", alpha=0.8))
-        
-        plt.tight_layout()
-        
-        # Guardar gráfica
-        img_buffer = io.BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
-        img_buffer.seek(0)
-        
-        # Crear imagen para el PDF
-        img = Image(img_buffer)
-        img.drawHeight = 3.5*inch
-        img.drawWidth = 7*inch
-        elements.append(img)
-        plt.close('all')
-        
-        elements.append(Spacer(1, 0.3*inch))
-        
-        # Tabla resumen con porcentajes - MEJORADA
-        total_events = sum(values)
-        duration_data = [
-            ["Categoría", "Eventos", "Porcentaje", "Nivel de Atención"]
-        ]
-        
-        # Definiciones de niveles de atención para cada categoría
-        attention_levels = [
-            "Bajo - Revisión opcional",
-            "Moderado - Revisión recomendada",
-            "Alto - Requiere revisión",
-            "Crítico - Atención inmediata"
-        ]
-        
-        for i, cat in enumerate(categories):
-            count = values[i]
-            percentage = (count/total_events*100) if total_events > 0 else 0
-            duration_data.append([
-                cat,
-                str(count),
-                f"{percentage:.1f}%",
-                attention_levels[i]
-            ])
-        
-        # Añadir fila de totales
-        duration_data.append([
-            "TOTAL",
-            str(total_events),
-            "100.0%",
-            ""
-        ])
-        
-        # Crear tabla con mejor diseño
-        duration_table = Table(duration_data, colWidths=[1.5*inch, 1*inch, 1*inch, 3.5*inch])
-        
-        # Estilo de la tabla más moderno
-        duration_style = [
-            # Cabecera
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-            ('ALIGN', (1, 0), (2, -1), 'CENTER'),
-            ('ALIGN', (3, 0), (3, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 11),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('TOPPADDING', (0, 0), (-1, 0), 12),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
-            # Configuraciones generales
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0, 1), (-1, -2), 8),
-            ('TOPPADDING', (0, 1), (-1, -2), 8),
-        ]
-        
-        # Mejorar colores para categorías - contraste mejorado
-        color_hex = ['#E8F5E9', '#FFF8E1', '#FFF3E0', '#FFEBEE']  # Fondos claros para mejor legibilidad
-        text_colors = ['#2E7D32', '#F57F17', '#E65100', '#B71C1C']  # Textos con contraste
-        
-        for i in range(4):
-            row = i + 1
-            duration_style.append(('BACKGROUND', (0, row), (0, row), colors.HexColor(color_hex[i])))
-            duration_style.append(('TEXTCOLOR', (0, row), (0, row), colors.HexColor(text_colors[i])))
-            duration_style.append(('FONTNAME', (0, row), (0, row), 'Helvetica-Bold'))
-        
-        # Fila de totales con estilo distintivo
-        duration_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#EDF2F7')))
-        duration_style.append(('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'))
-        duration_style.append(('LINEBELOW', (0, -2), (-1, -2), 1, colors.HexColor('#4A5568')))
-        duration_style.append(('TOPPADDING', (0, -1), (-1, -1), 10))
-        duration_style.append(('BOTTOMPADDING', (0, -1), (-1, -1), 10))
-        
-        duration_table.setStyle(TableStyle(duration_style))
-        elements.append(duration_table)
-        
-        # 3.1 Duración promedio por ubicación
-        if stats and 'duracion_promedio' in stats and len(stats['duracion_promedio']) > 0:
-            elements.append(Paragraph("Duración Promedio por Ubicación", subtitle_style))
-            
-            avg_duration_text = """
-            <para>El análisis de duración promedio por ubicación permite identificar patrones espaciales en la activación
-            de sensores. Las ubicaciones con valores más altos pueden requerir revisión de configuración o indicar
-            situaciones que demandan atención prioritaria.</para>
-            """
-            elements.append(Paragraph(avg_duration_text, normal_style))
-            elements.append(Spacer(1, 0.2 * inch))
-            
-            locations = [item['nombre_posicion'] for item in stats['duracion_promedio']]
-            avg_durations = [item['duracion_promedio'] for item in stats['duracion_promedio']]
-            
-            if len(locations) > 10:
-                sorted_data = sorted(zip(locations, avg_durations), key=lambda x: x[1], reverse=True)
-                locations = [item[0] for item in sorted_data[:10]]
-                avg_durations = [item[1] for item in sorted_data[:10]]
-                note = "Nota: Se muestran las 10 ubicaciones con mayor duración promedio."
-                elements.append(Paragraph(note, ParagraphStyle(
-                'Note',
-                parent=normal_style,
-                fontSize=9,
-                textColor=colors.HexColor('#718096'),
-                fontName='Helvetica-Oblique'
-                )))
-            
-            plt.figure(figsize=(5.5, max(4, len(locations) * 0.6)), dpi=150)
-            plt.style.use('seaborn-v0_8-whitegrid')
-            
-            bar_colors = []
-            for duration in avg_durations:
-                if duration < 5:
-                    bar_colors.append('#38A169')
-                elif duration < 20:
-                    bar_colors.append('#DD6B20')
-                elif duration < 60:
-                    bar_colors.append('#E53E3E')
+                if 'by_hour' in charts_data:
+                    # Si tenemos también datos por hora, usaremos una tabla para organizar los gráficos
+                    plt.figure(figsize=(5, 3.5))
+                    
+                    # Crear gráfico por hora con estilo coherente
+                    plt.plot(charts_data['by_hour']['labels'], charts_data['by_hour']['data'], 
+                        marker='o', color='#2B6CB0', linewidth=2)
+                    
+                    # Añadir área bajo la curva
+                    plt.fill_between(charts_data['by_hour']['labels'], charts_data['by_hour']['data'], 
+                                alpha=0.2, color='#2B6CB0')
+                    
+                    plt.title('Distribución por Hora del Día', fontsize=12, fontweight='bold')
+                    plt.grid(True, alpha=0.3, linestyle='--')
+                    plt.ylabel('Número de Alertas', fontsize=10)
+                    plt.xlabel('Hora', fontsize=10)
+                    
+                    # Mostrar solo algunas horas para evitar sobrecarga visual
+                    plt.xticks([0, 6, 12, 18, 23])
+                    
+                    ax = plt.gca()
+                    ax.spines['top'].set_visible(False)
+                    ax.spines['right'].set_visible(False)
+                    ax.set_facecolor('#F8FAFC')
+                    
+                    plt.tight_layout()
+                    
+                    hour_buffer = io.BytesIO()
+                    plt.savefig(hour_buffer, format='png', dpi=150, bbox_inches='tight')
+                    hour_buffer.seek(0)
+                    hour_img = Image(hour_buffer)
+                    hour_img.drawHeight = 2.8*inch
+                    hour_img.drawWidth = 3.5*inch
+                    plt.close('all')
+                    
+                    # Crear tabla para organizar los gráficos en dos columnas
+                    graphics_table_data = [[day_img, hour_img]]
+                    graphics_table = Table(graphics_table_data, colWidths=[3.5*inch, 3.5*inch])
+                    graphics_table.setStyle(TableStyle([
+                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ]))
+                    elements.append(graphics_table)
                 else:
-                    bar_colors.append('#822727')
+                    # Si solo tenemos datos por día
+                    elements.append(day_img)
             
-            bars = plt.barh(locations, avg_durations, color=bar_colors, height=0.7,
-                           edgecolor='white', linewidth=0.7)
+            # Espacio después de los gráficos
+            elements.append(Spacer(1, 0.3*inch))
+        
+        # 2.2 Distribución por Cámara
+        if charts_data and 'by_camera' in charts_data and len(charts_data['by_camera']['labels']) > 0:
+            elements.append(Paragraph("Distribución de Alertas por Cámara", subtitle_style))
+            
+            # Crear gráfico de pastel mejorado
+            plt.figure(figsize=(6, 4.5))
+            
+            # Colores más atractivos
+            color_palette = plt.cm.viridis(np.linspace(0, 1, len(charts_data['by_camera']['labels'])))
+            
+            # Si hay muchas cámaras, limitamos para mejor visualización
+            max_cameras = 8
+            if len(charts_data['by_camera']['labels']) > max_cameras:
+                # Tomar las cámaras con más alertas
+                top_cameras = sorted(zip(charts_data['by_camera']['labels'], 
+                                        charts_data['by_camera']['data']),
+                                    key=lambda x: x[1], reverse=True)
+                
+                # Separar top cámaras y agrupar el resto
+                top_labels = [x[0] for x in top_cameras[:max_cameras-1]]
+                top_data = [x[1] for x in top_cameras[:max_cameras-1]]
+                
+                # Crear categoría "Otras"
+                other_data = sum([x[1] for x in top_cameras[max_cameras-1:]])
+                
+                # Juntar datos
+                labels = top_labels + ["Otras"]
+                data = top_data + [other_data]
+                
+                wedges, texts, autotexts = plt.pie(data, 
+                                                labels=None,
+                                                autopct='%1.1f%%',
+                                                startangle=90,
+                                                colors=color_palette[:max_cameras],
+                                                shadow=True)
+            else:
+                wedges, texts, autotexts = plt.pie(charts_data['by_camera']['data'], 
+                                                labels=None,
+                                                autopct='%1.1f%%',
+                                                startangle=90,
+                                                colors=color_palette,
+                                                shadow=True)
+                labels = charts_data['by_camera']['labels']
+                data = charts_data['by_camera']['data']
+            
+            # Personalizar look & feel
+            plt.title('Distribución de Alertas por Cámara', fontsize=14, pad=20, fontweight='bold')
+            plt.axis('equal')
+            
+            # Leyenda en una posición mejor
+            plt.legend(wedges, labels, title="Cámaras", 
+                    loc="center left", 
+                    bbox_to_anchor=(1, 0.5),
+                    fontsize=9)
+            
+            # Personalizar porcentajes
+            for autotext in autotexts:
+                autotext.set_fontsize(9)
+                autotext.set_weight('bold')
+                autotext.set_color('white')
+            
+            plt.tight_layout()
+            
+            # Guardar la gráfica
+            img_buffer = io.BytesIO()
+            plt.savefig(img_buffer, format='png', dpi=150)
+            img_buffer.seek(0)
+            
+            # Crear imagen para el PDF
+            img = Image(img_buffer)
+            img.drawHeight = 4*inch
+            img.drawWidth = 7*inch
+            elements.append(img)
+            plt.close('all')
+            
+            elements.append(Spacer(1, 0.3*inch))
+            
+            # Tabla resumen por cámara
+            elements.append(Paragraph("Resumen de Actividad por Cámara", subtitle_style))
+            
+            camera_data = []
+            
+            # Cabecera
+            camera_data.append(["Posición de Cámara", "Total Alertas", "% del Total", "Tendencia"])
+            
+            # Calcular total
+            total = sum(charts_data['by_camera']['data'])
+            
+            # Simulamos datos de tendencia (en un sistema real vendríamos de la base de datos)
+            trends = ["↑", "↓", "→", "↑", "↓", "→", "↑", "↓", "→", "↑", "↓", "→"]  # Tendencias de ejemplo
+            
+            # Datos
+            for i, cam in enumerate(charts_data['by_camera']['labels']):
+                count = charts_data['by_camera']['data'][i]
+                percentage = (count/total*100) if total > 0 else 0
+                
+                # Asignar tendencia (en un sistema real esto vendría de comparar con períodos anteriores)
+                trend = trends[i % len(trends)]
+                trend_color = "#38A169" if trend == "↑" else "#E53E3E" if trend == "↓" else "#718096"
+                
+                camera_data.append([
+                    cam,
+                    str(count),
+                    f"{percentage:.1f}%",
+                    trend
+                ])
+            
+            # Crear tabla
+            camera_table = Table(camera_data, colWidths=[3*inch, 1.3*inch, 1.3*inch, 1.4*inch], repeatRows=1)
+            
+            # Estilo
+            cam_style = [
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('TOPPADDING', (0, 0), (-1, 0), 12),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]
+            
+            # Colorear filas alternadas y añadir colores a las tendencias
+            for i in range(1, len(camera_data)):
+                if i % 2 == 0:
+                    cam_style.append(('BACKGROUND', (0, i), (-2, i), colors.HexColor('#F7FAFC')))
+                
+                # Color de tendencia
+                trend = camera_data[i][3]
+                trend_color = "#38A169" if trend == "↑" else "#E53E3E" if trend == "↓" else "#718096"
+                cam_style.append(('TEXTCOLOR', (3, i), (3, i), colors.HexColor(trend_color)))
+                cam_style.append(('FONTNAME', (3, i), (3, i), 'Helvetica-Bold'))
+                cam_style.append(('FONTSIZE', (3, i), (3, i), 14))
+            
+            camera_table.setStyle(TableStyle(cam_style))
+            elements.append(camera_table)
+            
+            elements.append(Spacer(1, 0.5*inch))
+        
+        # 3. ANÁLISIS DE DURACIÓN DE EVENTOS
+        elements.append(Paragraph("3. Análisis de Duración de Eventos", section_style))
+        
+        if stats and 'duracion_categorias' in stats:
+            # Texto explicativo mejorado con iconos visuales
+            duration_explanation = """
+            <para>El análisis de duración clasifica los eventos en categorías según el tiempo que permanecen activos:
+            <br/><b>• <font color="#66BB6A">Bajo:</font></b> Menos de 5 segundos - Eventos breves, generalmente falsos positivos.
+            <br/><b>• <font color="#FFC107">Moderado:</font></b> Entre 5 y 20 segundos - Duración normal para tránsito regular.
+            <br/><b>• <font color="#FF9800">Alto:</font></b> Entre 20 y 60 segundos - Actividad prolongada que merece revisión.
+            <br/><b>• <font color="#F44336">Crítico:</font></b> Más de 60 segundos - Posible situación de riesgo que requiere atención inmediata.
+            </para>
+            """
+            elements.append(Paragraph(duration_explanation, normal_style))
+            elements.append(Spacer(1, 0.2*inch))
+            
+            # Gráfico de distribución por categorías de duración MEJORADO
+            plt.figure(figsize=(7, 4.5))
+            categories = ['Bajo (<5s)', 'Moderado (5-20s)', 'Alto (20-60s)', 'Crítico (>60s)']
+            values = [
+                stats['duracion_categorias']['bajo'],
+                stats['duracion_categorias']['moderado'],
+                stats['duracion_categorias']['alto'],
+                stats['duracion_categorias']['critico']
+            ]
+            
+            # Colores para indicar severidad con un toque más vibrante pero profesional
+            bar_colors = ['#66BB6A', '#FFC107', '#FF9800', '#F44336']
+            
+            # Crear gráfico de barras con estilo mejorado
+            ax = plt.subplot(111)
+            bars = plt.bar(categories, values, color=bar_colors, width=0.65)
+            
             # Añadir valores sobre las barras
             for bar in bars:
                 height = bar.get_height()
                 plt.text(bar.get_x() + bar.get_width()/2., height + 0.8,
-                       f'{int(height)}', ha='center', va='bottom', fontweight='bold', fontsize=12)
+                    f'{int(height)}', ha='center', va='bottom', fontweight='bold', fontsize=12)
             
             # Mejorar diseño del gráfico
             plt.title('Distribución de Eventos por Duración', fontsize=16, pad=20, fontweight='bold')
@@ -2747,13 +2579,13 @@ def generate_pdf_report(title, user_info, stats, charts_data, alerts_data, repor
             # Añadir valor total como anotación
             total = sum(values)
             plt.annotate(f'Total: {total} eventos', 
-                       xy=(0.5, 0.97),
-                       xycoords='axes fraction',
-                       fontsize=12,
-                       fontweight='bold',
-                       ha='center',
-                       va='top',
-                       bbox=dict(boxstyle="round,pad=0.3", fc="#EBF8FF", ec="#4299E1", alpha=0.8))
+                    xy=(0.5, 0.97),
+                    xycoords='axes fraction',
+                    fontsize=12,
+                    fontweight='bold',
+                    ha='center',
+                    va='top',
+                    bbox=dict(boxstyle="round,pad=0.3", fc="#EBF8FF", ec="#4299E1", alpha=0.8))
             
             plt.tight_layout()
             
@@ -2771,139 +2603,308 @@ def generate_pdf_report(title, user_info, stats, charts_data, alerts_data, repor
             
             elements.append(Spacer(1, 0.3*inch))
             
-
-        elements.append(Spacer(1, 0.3 * inch))
-        elements.append(Paragraph("Observaciones y Recomendaciones", section_style))
-
-        has_critical = any(item['duracion_promedio'] >= 60 for item in stats['duracion_promedio'])
-        has_high = any(20 <= item['duracion_promedio'] < 60 for item in stats['duracion_promedio'])
-
-        recommendations = """
-        <para>
-        """
-        if has_critical:
-            recommendations += """
-            <br/><br/><b>• Se detectaron ubicaciones con eventos de duración crítica</b> (más de 60 segundos).
-            Estas ubicaciones requieren revisión prioritaria, ya que podrían indicar:
-            <br/>  - Posibles problemas de seguridad persistentes
-            <br/>  - Configuración incorrecta de sensibilidad en sensores
-            <br/>  - Eventos anómalos que requieren atención inmediata
-            """
-
-        if has_high:
-            recommendations += """
-            <br/><br/><b>• Existen ubicaciones con eventos de duración alta</b> (entre 20 y 60 segundos).
-            Se recomienda:
-            <br/>  - Revisar patrones temporales de estos eventos
-            <br/>  - Verificar si coinciden con horarios específicos o actividades planificadas
-            <br/>  - Considerar ajustes moderados en la configuración de sensibilidad
-            """
-
-        recommendations += """
-        <br/><br/>Se sugiere establecer un umbral de revisión periódica para ubicaciones que muestren
-        consistentemente duraciones superiores a 20 segundos, y documentar las acciones tomadas para
-        resolver cualquier problema identificado.
-        </para>
-        """
-
-        elements.append(Paragraph(recommendations, normal_style))
-        elements.append(Spacer(1, 0.3 * inch))
-      
-        
-        # 1.3 Lista de eventos de larga duración (eventos críticos)
-        if stats and 'eventos_largos' in stats and len(stats['eventos_largos']) > 0:
-            elements.append(Paragraph("Eventos de Larga Duración", subtitle_style))
-            
-            # Texto explicativo
-            long_events_text = """
-            <para>Los eventos de larga duración pueden indicar situaciones que requieren atención prioritaria.
-            La siguiente tabla muestra los eventos con duración superior a 20 segundos, ordenados de mayor a menor duración.</para>
-            """
-            elements.append(Paragraph(long_events_text, normal_style))
-            elements.append(Spacer(1, 0.2*inch))
-            
-            # Cabeceras de la tabla
-            long_events_data = [["Ubicación", "Fecha", "Hora", "Duración", "Estado"]]
-            
-            # Datos de eventos largos
-            for event in stats['eventos_largos']:
-                duration_str = ""
-                duration = event['duracion_segundos']
-                
-                # Formatear duración para mejor legibilidad
-                if duration >= 60:
-                    minutes = int(duration // 60)
-                    seconds = int(duration % 60)
-                    duration_str = f"{minutes}m {seconds}s"
-                else:
-                    duration_str = f"{int(duration)}s"
-                
-                long_events_data.append([
-                    event['nombre_posicion'],
-                    event['fecha_evento'],
-                    event['hora_evento'],
-                    duration_str,
-                    "✓ Revisado" if event['revisado'] else "⚠ Pendiente"
-                ])
-            
-            # Crear tabla
-            col_widths = [2.5*inch, 1*inch, 1*inch, 1*inch, 1.5*inch]
-            long_events_table = Table(long_events_data, colWidths=col_widths, repeatRows=1)
-            
-            # Estilo de la tabla
-            table_style = [
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003366')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-                ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#B3C1D1'))
+            # Tabla resumen con porcentajes - MEJORADA
+            total_events = sum(values)
+            duration_data = [
+                ["Categoría", "Eventos", "Porcentaje", "Nivel de Atención"]
             ]
             
-            # Colorear filas según duración
-            for i, event in enumerate(stats['eventos_largos'], 1):
-                duration = event['duracion_segundos']
-                
-                if duration >= 60:
-                    table_style.append(('BACKGROUND', (3, i), (3, i), colors.HexColor('#FFEBEE')))  # Rojo claro
-                    table_style.append(('TEXTCOLOR', (3, i), (3, i), colors.HexColor('#D32F2F')))  # Rojo oscuro
-                elif duration >= 20:
-                    table_style.append(('BACKGROUND', (3, i), (3, i), colors.HexColor('#FFF8E1')))  # Amarillo claro
-                    table_style.append(('TEXTCOLOR', (3, i), (3, i), colors.HexColor('#F57F17')))  # Naranja oscuro
-                
-                # Destacar eventos no revisados
-                if not event['revisado']:
-                    table_style.append(('TEXTCOLOR', (-1, i), (-1, i), colors.HexColor('#CC3300')))
-                    table_style.append(('FONTNAME', (-1, i), (-1, i), 'Helvetica-Bold'))
-                else:
-                    table_style.append(('TEXTCOLOR', (-1, i), (-1, i), colors.HexColor('#006633')))
-                
-                # Filas alternadas
-                if i % 2 == 0:
-                    table_style.append(('BACKGROUND', (0, i), (-2, i), colors.HexColor('#F0F5FA')))
+            # Definiciones de niveles de atención para cada categoría
+            attention_levels = [
+                "Bajo - Revisión opcional",
+                "Moderado - Revisión recomendada",
+                "Alto - Requiere revisión",
+                "Crítico - Atención inmediata"
+            ]
             
-            long_events_table.setStyle(TableStyle(table_style))
-            elements.append(long_events_table)
+            for i, cat in enumerate(categories):
+                count = values[i]
+                percentage = (count/total_events*100) if total_events > 0 else 0
+                duration_data.append([
+                    cat,
+                    str(count),
+                    f"{percentage:.1f}%",
+                    attention_levels[i]
+                ])
             
-            # Añadir recomendaciones para eventos largos
-            elements.append(Spacer(1, 0.3*inch))
-            recommendations_title = "Recomendaciones para Eventos de Larga Duración"
-            elements.append(Paragraph(recommendations_title, subtitle_style))
+            # Añadir fila de totales
+            duration_data.append([
+                "TOTAL",
+                str(total_events),
+                "100.0%",
+                ""
+            ])
             
-            recommendations_text = """
-            <para>Basado en el análisis de los eventos de larga duración, se recomienda:
-            <br/>• Verificar las ubicaciones con eventos de más de 60 segundos de duración.
-            <br/>• Revisar la configuración de sensibilidad en las cámaras con alto promedio de duración.
-            <br/>• Considerar ajustar los umbrales de detección para eventos repetitivos en las mismas ubicaciones.
-            <br/>• Establecer protocolos de respuesta prioritaria para eventos críticos (>60s).
+            # Crear tabla con mejor diseño
+            duration_table = Table(duration_data, colWidths=[1.5*inch, 1*inch, 1*inch, 3.5*inch])
+            
+            # Estilo de la tabla más moderno
+            duration_style = [
+                # Cabecera
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (2, -1), 'CENTER'),
+                ('ALIGN', (3, 0), (3, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('TOPPADDING', (0, 0), (-1, 0), 12),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
+                # Configuraciones generales
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('BOTTOMPADDING', (0, 1), (-1, -2), 8),
+                ('TOPPADDING', (0, 1), (-1, -2), 8),
+            ]
+            
+            # Mejorar colores para categorías - contraste mejorado
+            color_hex = ['#E8F5E9', '#FFF8E1', '#FFF3E0', '#FFEBEE']  # Fondos claros para mejor legibilidad
+            text_colors = ['#2E7D32', '#F57F17', '#E65100', '#B71C1C']  # Textos con contraste
+            
+            for i in range(4):
+                row = i + 1
+                duration_style.append(('BACKGROUND', (0, row), (0, row), colors.HexColor(color_hex[i])))
+                duration_style.append(('TEXTCOLOR', (0, row), (0, row), colors.HexColor(text_colors[i])))
+                duration_style.append(('FONTNAME', (0, row), (0, row), 'Helvetica-Bold'))
+            
+            # Fila de totales con estilo distintivo
+            duration_style.append(('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#EDF2F7')))
+            duration_style.append(('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'))
+            duration_style.append(('LINEBELOW', (0, -2), (-1, -2), 1, colors.HexColor('#4A5568')))
+            duration_style.append(('TOPPADDING', (0, -1), (-1, -1), 10))
+            duration_style.append(('BOTTOMPADDING', (0, -1), (-1, -1), 10))
+            
+            duration_table.setStyle(TableStyle(duration_style))
+            elements.append(duration_table)
+            
+            # 3.1 Duración promedio por ubicación
+            if stats and 'duracion_promedio' in stats and len(stats['duracion_promedio']) > 0:
+                elements.append(Paragraph("Duración Promedio por Ubicación", subtitle_style))
+                
+                avg_duration_text = """
+                <para>El análisis de duración promedio por ubicación permite identificar patrones espaciales en la activación
+                de sensores. Las ubicaciones con valores más altos pueden requerir revisión de configuración o indicar
+                situaciones que demandan atención prioritaria.</para>
+                """
+                elements.append(Paragraph(avg_duration_text, normal_style))
+                elements.append(Spacer(1, 0.2 * inch))
+                
+                locations = [item['nombre_posicion'] for item in stats['duracion_promedio']]
+                avg_durations = [item['duracion_promedio'] for item in stats['duracion_promedio']]
+                
+                if len(locations) > 10:
+                    sorted_data = sorted(zip(locations, avg_durations), key=lambda x: x[1], reverse=True)
+                    locations = [item[0] for item in sorted_data[:10]]
+                    avg_durations = [item[1] for item in sorted_data[:10]]
+                    note = "Nota: Se muestran las 10 ubicaciones con mayor duración promedio."
+                    elements.append(Paragraph(note, ParagraphStyle(
+                    'Note',
+                    parent=normal_style,
+                    fontSize=9,
+                    textColor=colors.HexColor('#718096'),
+                    fontName='Helvetica-Oblique'
+                    )))
+                
+                plt.figure(figsize=(5.5, max(4, len(locations) * 0.6)), dpi=150)
+                plt.style.use('seaborn-v0_8-whitegrid')
+                
+                bar_colors = []
+                for duration in avg_durations:
+                    if duration < 5:
+                        bar_colors.append('#38A169')
+                    elif duration < 20:
+                        bar_colors.append('#DD6B20')
+                    elif duration < 60:
+                        bar_colors.append('#E53E3E')
+                    else:
+                        bar_colors.append('#822727')
+                
+                bars = plt.barh(locations, avg_durations, color=bar_colors, height=0.7,
+                            edgecolor='white', linewidth=0.7)
+                # Añadir valores sobre las barras
+                for bar in bars:
+                    height = bar.get_height()
+                    plt.text(bar.get_x() + bar.get_width()/2., height + 0.8,
+                        f'{int(height)}', ha='center', va='bottom', fontweight='bold', fontsize=12)
+                
+                # Mejorar diseño del gráfico
+                plt.title('Distribución de Eventos por Duración', fontsize=16, pad=20, fontweight='bold')
+                plt.ylabel('Número de eventos', fontsize=12)
+                plt.grid(axis='y', linestyle='--', alpha=0.3)
+                
+                # Eliminar bordes innecesarios
+                for spine in ax.spines.values():
+                    spine.set_visible(False)
+                
+                # Añadir colores de fondo para mejor visualización
+                ax.set_facecolor('#F7FAFC')  # Fondo gris muy claro
+                plt.gcf().set_facecolor('#FFFFFF')
+                
+                # Ajustar ticks del eje Y para mejor legibilidad
+                plt.yticks(fontsize=8)
+                plt.xticks(fontsize=9, fontweight='bold')
+                
+                # Añadir valor total como anotación
+                total = sum(values)
+                plt.annotate(f'Total: {total} eventos', 
+                        xy=(0.5, 0.97),
+                        xycoords='axes fraction',
+                        fontsize=12,
+                        fontweight='bold',
+                        ha='center',
+                        va='top',
+                        bbox=dict(boxstyle="round,pad=0.3", fc="#EBF8FF", ec="#4299E1", alpha=0.8))
+                
+                plt.tight_layout()
+                
+                # Guardar gráfica
+                img_buffer = io.BytesIO()
+                plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight')
+                img_buffer.seek(0)
+                
+                # Crear imagen para el PDF
+                img = Image(img_buffer)
+                img.drawHeight = 3.5*inch
+                img.drawWidth = 7*inch
+                elements.append(img)
+                plt.close('all')
+                
+                elements.append(Spacer(1, 0.3*inch))
+                
+
+            elements.append(Spacer(1, 0.3 * inch))
+            elements.append(Paragraph("Observaciones y Recomendaciones", section_style))
+
+            has_critical = any(item['duracion_promedio'] >= 60 for item in stats['duracion_promedio'])
+            has_high = any(20 <= item['duracion_promedio'] < 60 for item in stats['duracion_promedio'])
+
+            recommendations = """
+            <para>
+            """
+            if has_critical:
+                recommendations += """
+                <br/><br/><b>• Se detectaron ubicaciones con eventos de duración crítica</b> (más de 60 segundos).
+                Estas ubicaciones requieren revisión prioritaria, ya que podrían indicar:
+                <br/>  - Posibles problemas de seguridad persistentes
+                <br/>  - Configuración incorrecta de sensibilidad en sensores
+                <br/>  - Eventos anómalos que requieren atención inmediata
+                """
+
+            if has_high:
+                recommendations += """
+                <br/><br/><b>• Existen ubicaciones con eventos de duración alta</b> (entre 20 y 60 segundos).
+                Se recomienda:
+                <br/>  - Revisar patrones temporales de estos eventos
+                <br/>  - Verificar si coinciden con horarios específicos o actividades planificadas
+                <br/>  - Considerar ajustes moderados en la configuración de sensibilidad
+                """
+
+            recommendations += """
+            <br/><br/>Se sugiere establecer un umbral de revisión periódica para ubicaciones que muestren
+            consistentemente duraciones superiores a 20 segundos, y documentar las acciones tomadas para
+            resolver cualquier problema identificado.
             </para>
             """
-            elements.append(Paragraph(recommendations_text, normal_style))
-    elements.append(Spacer(1, 0.5*inch))
-    footer_text = f"Sistema de Monitoreo de Seguridad | Reporte generado el {datetime.now().strftime('%d/%m/%Y a las %H:%M:%S')}"
-    elements.append(Paragraph(footer_text, ParagraphStyle('footer', parent=styles['Italic'], fontSize=8, textColor=colors.grey, alignment=TA_CENTER)))
+
+            elements.append(Paragraph(recommendations, normal_style))
+            elements.append(Spacer(1, 0.3 * inch))
+        
+            
+            # 1.3 Lista de eventos de larga duración (eventos críticos)
+            if stats and 'eventos_largos' in stats and len(stats['eventos_largos']) > 0:
+                elements.append(Paragraph("Eventos de Larga Duración", subtitle_style))
+                
+                # Texto explicativo
+                long_events_text = """
+                <para>Los eventos de larga duración pueden indicar situaciones que requieren atención prioritaria.
+                La siguiente tabla muestra los eventos con duración superior a 20 segundos, ordenados de mayor a menor duración.</para>
+                """
+                elements.append(Paragraph(long_events_text, normal_style))
+                elements.append(Spacer(1, 0.2*inch))
+                
+                # Cabeceras de la tabla
+                long_events_data = [["Ubicación", "Fecha", "Hora", "Duración", "Estado"]]
+                
+                # Datos de eventos largos
+                for event in stats['eventos_largos']:
+                    duration_str = ""
+                    duration = event['duracion_segundos']
+                    
+                    # Formatear duración para mejor legibilidad
+                    if duration >= 60:
+                        minutes = int(duration // 60)
+                        seconds = int(duration % 60)
+                        duration_str = f"{minutes}m {seconds}s"
+                    else:
+                        duration_str = f"{int(duration)}s"
+                    
+                    long_events_data.append([
+                        event['nombre_posicion'],
+                        event['fecha_evento'],
+                        event['hora_evento'],
+                        duration_str,
+                        "✓ Revisado" if event['revisado'] else "⚠ Pendiente"
+                    ])
+                
+                # Crear tabla
+                col_widths = [2.5*inch, 1*inch, 1*inch, 1*inch, 1.5*inch]
+                long_events_table = Table(long_events_data, colWidths=col_widths, repeatRows=1)
+                
+                # Estilo de la tabla
+                table_style = [
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003366')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                    ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#B3C1D1'))
+                ]
+                
+                # Colorear filas según duración
+                for i, event in enumerate(stats['eventos_largos'], 1):
+                    duration = event['duracion_segundos']
+                    
+                    if duration >= 60:
+                        table_style.append(('BACKGROUND', (3, i), (3, i), colors.HexColor('#FFEBEE')))  # Rojo claro
+                        table_style.append(('TEXTCOLOR', (3, i), (3, i), colors.HexColor('#D32F2F')))  # Rojo oscuro
+                    elif duration >= 20:
+                        table_style.append(('BACKGROUND', (3, i), (3, i), colors.HexColor('#FFF8E1')))  # Amarillo claro
+                        table_style.append(('TEXTCOLOR', (3, i), (3, i), colors.HexColor('#F57F17')))  # Naranja oscuro
+                    
+                    # Destacar eventos no revisados
+                    if not event['revisado']:
+                        table_style.append(('TEXTCOLOR', (-1, i), (-1, i), colors.HexColor('#CC3300')))
+                        table_style.append(('FONTNAME', (-1, i), (-1, i), 'Helvetica-Bold'))
+                    else:
+                        table_style.append(('TEXTCOLOR', (-1, i), (-1, i), colors.HexColor('#006633')))
+                    
+                    # Filas alternadas
+                    if i % 2 == 0:
+                        table_style.append(('BACKGROUND', (0, i), (-2, i), colors.HexColor('#F0F5FA')))
+                
+                long_events_table.setStyle(TableStyle(table_style))
+                elements.append(long_events_table)
+                
+                # Añadir recomendaciones para eventos largos
+                elements.append(Spacer(1, 0.3*inch))
+                recommendations_title = "Recomendaciones para Eventos de Larga Duración"
+                elements.append(Paragraph(recommendations_title, subtitle_style))
+                
+                recommendations_text = """
+                <para>Basado en el análisis de los eventos de larga duración, se recomienda:
+                <br/>• Verificar las ubicaciones con eventos de más de 60 segundos de duración.
+                <br/>• Revisar la configuración de sensibilidad en las cámaras con alto promedio de duración.
+                <br/>• Considerar ajustar los umbrales de detección para eventos repetitivos en las mismas ubicaciones.
+                <br/>• Establecer protocolos de respuesta prioritaria para eventos críticos (>60s).
+                </para>
+                """
+        
+        elements.append(Paragraph(recommendations_text, normal_style))
+        elements.append(Spacer(1, 0.5*inch))
+        footer_text = f"Sistema de Monitoreo de Seguridad | Reporte generado el {datetime.now().strftime('%d/%m/%Y a las %H:%M:%S')}"
+        elements.append(Paragraph(footer_text, ParagraphStyle('footer', parent=styles['Italic'], fontSize=8, textColor=colors.grey, alignment=TA_CENTER)))
     # Construir el PDF
     doc.build(elements)
     return file_path
@@ -2920,6 +2921,9 @@ def generate_excel_report(title, user_info, stats, charts_data, alerts_data, rep
     from openpyxl.chart import BarChart, PieChart, Reference, Series, LineChart
     from openpyxl.drawing.image import Image as XLImage
     from openpyxl.utils import get_column_letter
+    
+    # Definir la variable current_row que estaba faltando
+    current_row = 11  # Inicializar después de la sección del período analizado que termina en la fila 9
     
     # Definir las funciones de estilo faltantes
     def apply_header_style(cell):
@@ -3332,9 +3336,9 @@ def generate_excel_report(title, user_info, stats, charts_data, alerts_data, rep
                     if i % 2 == 0:
                         for col in [1, 2, 3, 5]:  # Excluimos la columna de duración que ya tiene su propio color
                             ws_long.cell(row=row, column=col).fill = PatternFill("solid", fgColor="F0F5FA")
-
+    
     # --- IMPLEMENTACIÓN ESPECÍFICA PARA ANÁLISIS DE CÁMARAS ---
-    if report_type == "cameras-analysis":
+    elif report_type == "cameras-analysis":
         # Variables para mantener la posición actual
         current_row = 11
         
@@ -3726,7 +3730,7 @@ def generate_excel_report(title, user_info, stats, charts_data, alerts_data, rep
             apply_normal_style(ws[f'A{current_row}'])
 
     # --- IMPLEMENTACIÓN DEL REPORTE COMPLETO INTEGRADO ---
-    if report_type == "complete-integrated":
+    elif report_type == "complete-integrated":
         # --- HOJA PRINCIPAL: RESUMEN EJECUTIVO ---
         # Crear una única hoja principal con el resumen ejecutivo
         current_row = 11
@@ -4784,7 +4788,6 @@ def get_date_range_text(date_range, start_date, end_date):
         return f'Desde {start_date} hasta {end_date}'
     else:
         return 'Últimos 7 días (predeterminado)'
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

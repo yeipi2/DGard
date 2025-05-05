@@ -27,18 +27,23 @@ DB_CONFIG = {
     'host': 'localhost',
 }
 
+# Umbrales de duración para clasificación de eventos (en segundos)
+DURACION_CORTA = 15  # Movimientos de menos de 10 segundos
+DURACION_MEDIA = 30  # Movimientos entre 10 y 30 segundos
+# Más de 30 segundos se considera duración larga
+
 # Configuración de dispositivos
 ESP32_CONFIG = [
     {
         'name': 'ESP32-PIR',
         'port': 'COM7',
         'baud': 9600,
-        'camera_id': 7,
-        'camera_ip': 'http://192.168.137.196/stream',
+        'camera_id': 9,
+        'camera_ip': 'http://192.168.137.198/stream',
         'tipo': 'completo',  # Maneja inicio y fin
-        'pat_inicio': r"Movimiento detectado",
-        'pat_fin': r"Movimiento finalizado\. Duración: (\d+) segundos",
-        'descripcion': 'Movimiento detectado en la entrada'
+        'pat_inicio': r"Movimiento detectado - Inicio de evento",
+        'pat_fin': r"Duración del movimiento \(s\): (\d+)",
+        'ubicacion': 'entrada'
     },
     {
         'name': 'ESP32-CAM',
@@ -46,9 +51,10 @@ ESP32_CONFIG = [
         'baud': 115200,
         'camera_id': 8,
         'camera_ip': 'http://192.168.137.197/stream',
-        'tipo': 'simple',  # Solo registra evento simple
-        'pat_simple': r"¡MOVIMIENTO CONFIRMADO!",
-        'descripcion': 'Movimiento detectado en el estacionamiento'
+        'tipo': 'completo',  # Cambiado a completo para capturar duración
+        'pat_inicio': r"Movimiento detectado - Inicio de evento",
+        'pat_fin': r"Duración del movimiento \(s\): (\d+)",
+        'ubicacion': 'estacionamiento'
     }
 ]
 
@@ -62,120 +68,182 @@ def connect_db():
         logger.error(f"Error conectando a la base de datos: {e}")
         return None
 
-# Registrar evento movimiento
-def record_motion_event(conn, cam_id, cam_ip, descripcion):
-    cur = conn.cursor()
-    fecha = datetime.date.today()
-    hora = datetime.datetime.now().time()
-    cur.execute(
-        "INSERT INTO eventos_movimiento (id_camara, fecha_evento, hora_evento, descripcion, ip_sensor)"
-        " VALUES (%s, %s, %s, %s, %s) RETURNING id_evento",
-        (cam_id, fecha, hora, descripcion, cam_ip)
-    )
-    event_id = cur.fetchone()[0]
-    conn.commit()
-    logger.info(f"Evento registrado ID {event_id}")
-    return event_id
-
-# Actualizar conteo diario
-def update_event_count(conn, cam_id):
-    cur = conn.cursor()
-    today = datetime.date.today()
-    cur.execute(
-        "SELECT id_conteo, cantidad_movimientos FROM conteo_movimientos"
-        " WHERE id_camara=%s AND fecha=%s",
-        (cam_id, today)
-    )
-    row = cur.fetchone()
-    if row:
-        idc, cnt = row
-        cur.execute(
-            "UPDATE conteo_movimientos SET cantidad_movimientos=%s WHERE id_conteo=%s",
-            (cnt+1, idc)
-        )
+# Determinar la descripción basada en la duración
+def get_description_by_duration(ubicacion, duration):
+    if duration < DURACION_CORTA:
+        return f"Movimiento breve detectado en {ubicacion} ({duration}s)"
+    elif duration < DURACION_MEDIA:
+        return f"Movimiento moderado detectado en {ubicacion} ({duration}s)"
     else:
-        cur.execute(
-            "INSERT INTO conteo_movimientos (id_camara, fecha, cantidad_movimientos)"
-            " VALUES (%s,%s,%s)",
-            (cam_id, today, 1)
-        )
-    conn.commit()
-    logger.info("Conteo diario actualizado")
+        return f"Movimiento prolongado detectado en {ubicacion} ({duration}s)"
 
-# Registrar duración
-def record_motion_duration(conn, event_id, duration):
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO duracion_movimiento (id_evento, duracion_segundos) VALUES (%s,%s)",
-        (event_id, duration)
-    )
-    conn.commit()
-    logger.info(f"Duración registrada: {duration}s para evento {event_id}")
+# Registrar evento movimiento completo (incluyendo duración)
+def record_complete_motion_event(conn, cam_id, cam_ip, descripcion, duration):
+    try:
+        cur = conn.cursor()
+        fecha = datetime.date.today()
+        hora = datetime.datetime.now().time()
+        
+        # Insertar en eventos_movimiento
+        cur.execute(
+            "INSERT INTO eventos_movimiento (id_camara, fecha_evento, hora_evento, descripcion, ip_sensor)"
+            " VALUES (%s, %s, %s, %s, %s) RETURNING id_evento",
+            (cam_id, fecha, hora, descripcion, cam_ip)
+        )
+        event_id = cur.fetchone()[0]
+        
+        # Insertar en duracion_movimiento
+        cur.execute(
+            "INSERT INTO duracion_movimiento (id_evento, duracion_segundos) VALUES (%s,%s)",
+            (event_id, duration)
+        )
+        
+        # Actualizar conteo_movimientos
+        cur.execute(
+            "SELECT id_conteo, cantidad_movimientos FROM conteo_movimientos"
+            " WHERE id_camara=%s AND fecha=%s",
+            (cam_id, fecha)
+        )
+        row = cur.fetchone()
+        if row:
+            idc, cnt = row
+            cur.execute(
+                "UPDATE conteo_movimientos SET cantidad_movimientos=%s WHERE id_conteo=%s",
+                (cnt+1, idc)
+            )
+        else:
+            cur.execute(
+                "INSERT INTO conteo_movimientos (id_camara, fecha, cantidad_movimientos)"
+                " VALUES (%s,%s,%s)",
+                (cam_id, fecha, 1)
+            )
+        
+        conn.commit()
+        logger.info(f"Evento completo registrado ID {event_id} con duración {duration}s")
+        return event_id
+    except Error as e:
+        logger.error(f"Error al registrar evento completo: {e}")
+        conn.rollback()
+        return None
 
 # Monitor de puerto serie
 def monitor_serial(cfg, conn):
     ser = None
+    pending_events = {}  # Almacena información temporal de eventos pendientes
+    
     while True:
         try:
             if ser is None or not ser.is_open:
                 ser = serial.Serial(cfg['port'], cfg['baud'], timeout=1)
                 logger.info(f"Conectado a {cfg['name']} en {cfg['port']}")
+                
             line = ser.readline().decode('utf-8', errors='ignore').strip()
             if not line:
                 continue
+                
+            logger.info(f"Datos recibidos de {cfg['name']}: {line}")
 
             if cfg['tipo'] == 'completo':
-                # Dispositivo que maneja inicio y fin
+                # Verificar si es inicio de movimiento
                 if re.search(cfg['pat_inicio'], line):
-                    logger.info(f"{cfg['name']}: Inicio detectado")
-                    eid = record_motion_event(conn, cfg['camera_id'], cfg['camera_ip'], cfg['descripcion'])
-                    update_event_count(conn, cfg['camera_id'])
-                    cfg['ultimo_evento'] = eid
-                m = re.search(cfg['pat_fin'], line)
-                if m and 'ultimo_evento' in cfg:
-                    dur = int(m.group(1))
-                    logger.info(f"{cfg['name']}: Fin detectado, duración={dur}s")
-                    record_motion_duration(conn, cfg['ultimo_evento'], dur)
-                    del cfg['ultimo_evento']
+                    timestamp = datetime.datetime.now()
+                    logger.info(f"{cfg['name']}: Inicio de movimiento detectado a las {timestamp}")
+                    
+                    # Guardar información del inicio para procesarlo después
+                    pending_events[cfg['name']] = {
+                        'timestamp': timestamp,
+                        'camera_id': cfg['camera_id'],
+                        'camera_ip': cfg['camera_ip'],
+                        'ubicacion': cfg['ubicacion']
+                    }
+                
+                # Verificar si es fin de movimiento y capturar la duración
+                duration_match = re.search(cfg['pat_fin'], line)
+                if duration_match and cfg['name'] in pending_events:
+                    duration = int(duration_match.group(1))
+                    logger.info(f"{cfg['name']}: Fin de movimiento detectado, duración = {duration}s")
+                    
+                    # Obtener datos del evento pendiente
+                    event_data = pending_events[cfg['name']]
+                    
+                    # Determinar la descripción basada en la duración
+                    descripcion = get_description_by_duration(event_data['ubicacion'], duration)
+                    
+                    # Registrar el evento completo ahora que conocemos la duración
+                    record_complete_motion_event(
+                        conn, 
+                        event_data['camera_id'],
+                        event_data['camera_ip'],
+                        descripcion,
+                        duration
+                    )
+                    
+                    # Eliminar el evento pendiente
+                    del pending_events[cfg['name']]
 
-            elif cfg['tipo'] == 'simple':
-                # Dispositivo que solo registra el evento simple
-                if re.search(cfg['pat_simple'], line, re.IGNORECASE):
-                    logger.info(f"{cfg['name']}: Movimiento detectado (simple)")
-                    record_motion_event(conn, cfg['camera_id'], cfg['camera_ip'], cfg['descripcion'])
-                    update_event_count(conn, cfg['camera_id'])
-
+        except serial.SerialException as se:
+            logger.error(f"Error en puerto serie {cfg['name']}: {se}")
+            if ser and ser.is_open:
+                ser.close()
+                ser = None
+            time.sleep(5)  # Esperar antes de reintentar
+            
         except Exception as e:
             logger.error(f"Error en {cfg['name']}: {e}")
             if ser and ser.is_open:
                 ser.close()
+                ser = None
             time.sleep(2)
 
 # Main
 def main():
     conn = connect_db()
     if not conn:
+        logger.error("No se pudo conectar a la base de datos. Saliendo...")
         return
 
-    # Crear tablas si no existen
-    cur = conn.cursor()
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS conteo_movimientos (
-      id_conteo SERIAL PRIMARY KEY,
-      id_camara INTEGER REFERENCES camaras(id_camara) ON DELETE SET NULL,
-      fecha DATE NOT NULL,
-      cantidad_movimientos INTEGER DEFAULT 0,
-      hora_pico TIME
-    );
-    """)
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS duracion_movimiento (
-      id_duracion SERIAL PRIMARY KEY,
-      id_evento INTEGER REFERENCES eventos_movimiento(id_evento) ON DELETE CASCADE,
-      duracion_segundos INTEGER NOT NULL
-    );
-    """)
-    conn.commit()
+    # Verificar que existen las tablas necesarias
+    try:
+        cur = conn.cursor()
+        
+        # Verificar tabla eventos_movimiento
+        cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'eventos_movimiento')")
+        if not cur.fetchone()[0]:
+            logger.error("No existe la tabla eventos_movimiento. Asegúrate de crear la base de datos correctamente.")
+            conn.close()
+            return
+            
+        # Verificar tabla conteo_movimientos
+        cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'conteo_movimientos')")
+        if not cur.fetchone()[0]:
+            logger.info("Creando tabla conteo_movimientos...")
+            cur.execute("""
+            CREATE TABLE conteo_movimientos (
+              id_conteo SERIAL PRIMARY KEY,
+              id_camara INTEGER REFERENCES camaras(id_camara) ON DELETE SET NULL,
+              fecha DATE NOT NULL,
+              cantidad_movimientos INTEGER DEFAULT 0,
+              hora_pico TIME
+            );
+            """)
+            
+        # Verificar tabla duracion_movimiento
+        cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'duracion_movimiento')")
+        if not cur.fetchone()[0]:
+            logger.info("Creando tabla duracion_movimiento...")
+            cur.execute("""
+            CREATE TABLE duracion_movimiento (
+              id_duracion SERIAL PRIMARY KEY,
+              id_evento INTEGER REFERENCES eventos_movimiento(id_evento) ON DELETE CASCADE,
+              duracion_segundos INTEGER NOT NULL
+            );
+            """)
+            
+        conn.commit()
+    except Error as e:
+        logger.error(f"Error al verificar/crear tablas: {e}")
+        conn.close()
+        return
 
     threads = []
     for cfg in ESP32_CONFIG:
@@ -188,7 +256,7 @@ def main():
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("Terminando...")
+        logger.info("Terminando programa...")
         conn.close()
 
 if __name__ == '__main__':
